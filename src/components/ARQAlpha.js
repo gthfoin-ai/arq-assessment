@@ -152,7 +152,11 @@ export default function ARQAlphaApp() {
       database.push(record);
       localStorage.setItem(DB_KEY, JSON.stringify(database));
       // Save to server API for shared access
-      try { await fetch('/api/assessments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'alpha', record }) }); } catch (e) { console.log('Server save failed, data saved locally'); }
+      try { 
+        const response = await fetch('/api/assessments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'alpha', record }) });
+        const result = await response.json();
+        console.log('Server save result:', result);
+      } catch (e) { console.log('Server save failed:', e); }
     } catch (e) { console.error('Failed to save:', e); }
   };
 
