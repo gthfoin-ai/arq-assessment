@@ -187,17 +187,19 @@ const TOTAL_QUESTIONS = Object.values(ARQ_DIMENSIONS).reduce((sum, d) => sum + d
 
 // Logo Component
 const Logo = ({ size = 'default' }) => {
-  const s = { small: 36, default: 44, large: 52 }[size];
+  const s = { small: 28, default: 36, large: 44 }[size];
+  const textSize = { small: 'text-xs sm:text-sm', default: 'text-sm sm:text-lg', large: 'text-lg' }[size];
+  const hideText = size === 'small';
   return (
-    <div className="flex items-center gap-4">
-      <div className="relative flex items-center justify-center" style={{ width: s, height: s }}>
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className="relative flex items-center justify-center flex-shrink-0" style={{ width: s, height: s }}>
         <div className="absolute inset-0 border-2 rounded-sm" style={{ borderColor: BRAND.cyan, transform: 'rotate(45deg)', background: 'linear-gradient(135deg, rgba(0,229,229,0.05) 0%, rgba(0,229,229,0.15) 100%)', boxShadow: '0 0 20px rgba(0,229,229,0.3)' }}>
           <div className="absolute top-1/2 left-1/2 w-3/5 h-3/5 -translate-x-1/2 -translate-y-1/2" style={{ backgroundColor: BRAND.cyan, opacity: 0.4 }} />
         </div>
       </div>
-      <div className="flex flex-col">
-        <span className="text-xs tracking-wider" style={{ color: BRAND.gray, direction: 'rtl' }}>كامبس دبي للذكاء الاصطناعي</span>
-        <span className="text-lg font-bold tracking-wide" style={{ color: BRAND.white }}>DUBAI AI CAMPUS</span>
+      <div className={`flex-col ${hideText ? 'hidden sm:flex' : 'flex'}`}>
+        <span className="text-[8px] sm:text-xs tracking-wider" style={{ color: BRAND.gray, direction: 'rtl' }}>كامبس دبي للذكاء الاصطناعي</span>
+        <span className={`${textSize} font-bold tracking-wide`} style={{ color: BRAND.white }}>DUBAI AI CAMPUS</span>
       </div>
     </div>
   );
@@ -317,6 +319,7 @@ export default function ARQFull() {
     try {
       const record = {
         id: assessment.id,
+        type: 'full',
         timestamp: new Date().toISOString(),
         organization: assessment.organizationName,
         industry: assessment.industry,

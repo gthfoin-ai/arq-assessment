@@ -1,6 +1,6 @@
 {
   "name": "arq-assessment-platform",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "redis": "^4.6.12",
-    "next": "15.0.5",
+    "next": "15.1.9",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
