@@ -1,15 +1,12 @@
 import { NextResponse } from 'next/server';
-import { kv } from '@vercel/kv';
+import { createClient } from 'redis';
 
 export async function GET() {
   const results = {
     timestamp: new Date().toISOString(),
-    kvConnected: false,
+    redisConnected: false,
     envVars: {
-      KV_URL: !!process.env.KV_URL,
-      KV_REST_API_URL: !!process.env.KV_REST_API_URL,
-      KV_REST_API_TOKEN: !!process.env.KV_REST_API_TOKEN,
-      KV_REST_API_READ_ONLY_TOKEN: !!process.env.KV_REST_API_READ_ONLY_TOKEN,
+      REDIS_URL: !!process.env.REDIS_URL,
     },
     testWrite: null,
     testRead: null,
@@ -18,27 +15,38 @@ export async function GET() {
     error: null
   };
 
+  let client;
   try {
+    client = createClient({ url: process.env.REDIS_URL });
+    client.on('error', (err) => console.error('Redis Client Error', err));
+    await client.connect();
+    
     // Test write
-    await kv.set('arq-test-key', { test: true, time: Date.now() });
+    await client.set('arq-test-key', JSON.stringify({ test: true, time: Date.now() }));
     results.testWrite = 'success';
     
     // Test read
-    const testData = await kv.get('arq-test-key');
+    const testData = await client.get('arq-test-key');
     results.testRead = testData ? 'success' : 'empty';
     
     // Check existing data
-    const alpha = await kv.get('arq-alpha-assessments') || [];
-    const full = await kv.get('arq-full-assessments') || [];
+    const alphaData = await client.get('arq-alpha-assessments');
+    const fullData = await client.get('arq-full-assessments');
+    const alpha = alphaData ? JSON.parse(alphaData) : [];
+    const full = fullData ? JSON.parse(fullData) : [];
     results.alphaCount = Array.isArray(alpha) ? alpha.length : 0;
     results.fullCount = Array.isArray(full) ? full.length : 0;
     
-    results.kvConnected = true;
+    results.redisConnected = true;
   } catch (error) {
     results.error = {
       message: error.message,
       name: error.name
     };
+  } finally {
+    if (client) {
+      try { await client.disconnect(); } catch (e) {}
+    }
   }
 
   return NextResponse.json(results);
