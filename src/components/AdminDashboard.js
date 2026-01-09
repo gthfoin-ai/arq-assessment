@@ -189,12 +189,93 @@ export default function AdminDashboard() {
   const industryData = uniqueIndustries.map(ind => ({ label: ind.split(' ')[0], value: filteredRecords.filter(r => r.industry === ind).length, color: BRAND.cyan })).sort((a, b) => b.value - a.value).slice(0, 8);
 
   const exportToCSV = () => {
-    const headers = ['Source', 'ID', 'Type', 'Date', 'Organization', 'Industry', 'Country', 'Assessor', 'Role', 'Score', 'Level'];
-    const rows = filteredRecords.map(r => [r.source, r.id, r.type, new Date(r.timestamp).toLocaleDateString(), r.organization, r.industry, r.country, r.assessorName, r.role, r.overallScore, r.readinessLevel]);
-    const csv = [headers.join(','), ...rows.map(r => r.map(v => `"${v || ''}"`).join(','))].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv' });
+    // Separate Alpha and Full records for different column structures
+    const alphaRecs = filteredRecords.filter(r => r.source === 'alpha');
+    const fullRecs = filteredRecords.filter(r => r.source === 'full');
+    
+    // Build Alpha CSV with all question responses
+    let csvContent = '';
+    
+    if (alphaRecs.length > 0) {
+      // Find max number of questions from responses
+      const maxAlphaQuestions = Math.max(...alphaRecs.map(r => r.responses ? Object.keys(r.responses).length : 0), 25);
+      const alphaHeaders = ['Source', 'ID', 'Type', 'Date', 'Organization', 'Industry', 'Country', 'Department', 'EmployeeCount', 'Assessor', 'Email', 'Role', 'OverallScore', 'Level'];
+      // Add question columns
+      for (let i = 0; i < maxAlphaQuestions; i++) {
+        alphaHeaders.push(`Q${i + 1}_Score`);
+      }
+      // Add domain score columns
+      alphaHeaders.push('AI_Fundamentals_%', 'Data_Literacy_%', 'Technical_Skills_%', 'AI_Tools_%', 'Ethics_%', 'Problem_Solving_%', 'Project_Mgmt_%', 'Collaboration_%', 'Industry_Knowledge_%', 'Continuous_Learning_%', 'Strategic_Vision_%', 'Data_Infrastructure_%', 'Technology_Tools_%', 'Talent_Skills_%', 'Governance_Ethics_%', 'Change_Mgmt_%', 'Operations_%');
+      
+      const alphaRows = alphaRecs.map(r => {
+        const row = [
+          r.source, r.id, r.type, new Date(r.timestamp).toLocaleDateString(),
+          r.organization, r.industry, r.country, r.department, r.employeeCount,
+          r.assessorName, r.assessorEmail, r.role, r.overallScore, r.readinessLevel
+        ];
+        // Add question responses (score 1-5)
+        for (let i = 0; i < maxAlphaQuestions; i++) {
+          const resp = r.responses ? r.responses[i] : null;
+          // responses stores the option index (0-4), actual score is index + 1
+          row.push(resp !== null && resp !== undefined ? resp + 1 : '');
+        }
+        // Add domain scores
+        const domains = r.domainScores || {};
+        ['AI Fundamentals', 'Data Literacy', 'Technical Skills', 'AI Tools & Platforms', 'Ethics & Governance', 'Problem Solving', 'Project Management', 'Collaboration', 'Industry Knowledge', 'Continuous Learning', 'Strategic Vision', 'Data Infrastructure', 'Technology & Tools', 'Talent & Skills', 'Governance & Ethics', 'Change Management', 'Operations & Scale'].forEach(d => {
+          row.push(domains[d]?.percentage || '');
+        });
+        return row;
+      });
+      
+      csvContent += '=== ARQ ALPHA ASSESSMENTS ===\n';
+      csvContent += alphaHeaders.join(',') + '\n';
+      csvContent += alphaRows.map(r => r.map(v => `"${v || ''}"`).join(',')).join('\n');
+      csvContent += '\n\n';
+    }
+    
+    if (fullRecs.length > 0) {
+      // Full ARQ has 80 questions with criterion IDs
+      const fullHeaders = ['Source', 'ID', 'Type', 'Date', 'Organization', 'Industry', 'Country', 'Department', 'EmployeeCount', 'Assessor', 'Email', 'ARQScore', 'Level'];
+      
+      // Collect all unique criterion IDs across all records
+      const allCriterionIds = new Set();
+      fullRecs.forEach(r => {
+        if (r.responses) {
+          Object.keys(r.responses).forEach(id => allCriterionIds.add(id));
+        }
+      });
+      const sortedCriterionIds = Array.from(allCriterionIds).sort();
+      sortedCriterionIds.forEach(id => fullHeaders.push(id));
+      
+      // Add dimension score columns
+      fullHeaders.push('Strategy_Score', 'Data_Score', 'Technology_Score', 'Talent_Score', 'Governance_Score', 'Change_Score', 'Operations_Score', 'Innovation_Score');
+      
+      const fullRows = fullRecs.map(r => {
+        const row = [
+          r.source, r.id, r.type || 'full', new Date(r.timestamp).toLocaleDateString(),
+          r.organization, r.industry, r.country, r.department, r.employeeCount,
+          r.assessorName, r.assessorEmail, r.overallScore, r.readinessLevel
+        ];
+        // Add each criterion response
+        sortedCriterionIds.forEach(id => {
+          row.push(r.responses?.[id] || '');
+        });
+        // Add dimension scores
+        const dims = r.dimensionScores || {};
+        ['Strategy & Vision', 'Data Foundation', 'Technology & Infrastructure', 'Talent & Culture', 'Governance & Ethics', 'Change Management', 'Operations & Scale', 'Innovation & R&D'].forEach(d => {
+          row.push(typeof dims[d] === 'number' ? dims[d].toFixed(2) : (dims[d] || ''));
+        });
+        return row;
+      });
+      
+      csvContent += '=== ARQ FULL ASSESSMENTS ===\n';
+      csvContent += fullHeaders.join(',') + '\n';
+      csvContent += fullRows.map(r => r.map(v => `"${v || ''}"`).join(',')).join('\n');
+    }
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = `ARQ_Export_${new Date().toISOString().split('T')[0]}.csv`; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = `ARQ_Full_Export_${new Date().toISOString().split('T')[0]}.csv`; a.click();
     URL.revokeObjectURL(url);
   };
 
