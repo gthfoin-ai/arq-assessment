@@ -1,0 +1,404 @@
+"use client";
+import React, { useState, useEffect, useRef } from 'react';
+import { generateATLASRecommendation } from '../lib/atlas-utils';
+
+const BRAND = { black: '#000000', cyan: '#00E5E5', cyanDark: '#00B8B8', cyanLight: '#4DFAFA', cyanGlow: '#00FFE5', white: '#FFFFFF', gray: '#888888', grayLight: '#CCCCCC', grayDark: '#333333', navy: '#0E1825', deepNavy: '#0A0F1A' };
+
+const ROLES = ['', 'Executive Leadership (CEO, MD, C-Suite)', 'Technology & IT (CTO, CIO, IT Director, Engineers)', 'Data & Analytics (CDO, Data Scientists, BI Analysts)', 'Finance & Accounting (CFO, Controllers, Financial Analysts)', 'Operations & Supply Chain (COO, Operations Managers, Logistics)', 'Human Resources (CHRO, HR Managers, Talent)', 'Marketing & Sales (CMO, Marketing Managers, Sales Directors)', 'Legal & Compliance (General Counsel, Compliance Officers)', 'Product Management (Product Managers, Product Owners)', 'Project & Program Management (PMO, Project Managers)', 'Customer Service & Support (Customer Success, Support Managers)', 'Research & Development (R&D Directors, Scientists)', 'Consulting & Advisory (Internal/External Consultants)', 'Other / General Management'];
+const COUNTRIES = ['', 'United Arab Emirates', 'Saudi Arabia', 'Qatar', 'Kuwait', 'Bahrain', 'Oman', 'Afghanistan', 'Albania', 'Algeria', 'Argentina', 'Australia', 'Austria', 'Bangladesh', 'Belgium', 'Brazil', 'Canada', 'Chile', 'China', 'Colombia', 'Czech Republic', 'Denmark', 'Egypt', 'Finland', 'France', 'Germany', 'Greece', 'Hong Kong', 'Hungary', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel', 'Italy', 'Japan', 'Jordan', 'Kenya', 'Lebanon', 'Luxembourg', 'Malaysia', 'Mexico', 'Morocco', 'Netherlands', 'New Zealand', 'Nigeria', 'Norway', 'Pakistan', 'Peru', 'Philippines', 'Poland', 'Portugal', 'Romania', 'Russia', 'Singapore', 'South Africa', 'South Korea', 'Spain', 'Sweden', 'Switzerland', 'Taiwan', 'Thailand', 'Turkey', 'Ukraine', 'United Kingdom', 'United States', 'Vietnam', 'Other'];
+const INDUSTRIES = ['', 'Financial Services', 'Government', 'Healthcare', 'Retail', 'Manufacturing', 'Energy & Utilities', 'Technology', 'Telecommunications', 'Real Estate', 'Education', 'Transportation & Logistics', 'Media & Entertainment', 'Professional Services', 'Hospitality & Tourism', 'Construction', 'Agriculture', 'Pharmaceuticals', 'Other'];
+const DEPARTMENTS = ['', 'Executive / C-Suite', 'Strategy', 'Finance', 'Human Resources', 'Information Technology', 'Digital / Innovation', 'Operations', 'Marketing', 'Sales', 'Customer Service', 'Legal / Compliance', 'Risk Management', 'Supply Chain / Logistics', 'Research & Development', 'Data / Analytics', 'Product Management', 'Engineering', 'Consulting', 'Other'];
+const EMPLOYEE_COUNTS = ['', '1-50', '51-200', '201-500', '501-1000', '1001-5000', '5001-10000', '10000+'];
+
+const INDIVIDUAL_QUESTIONS = [
+  { domain: "AI Fundamentals", domainDesc: "Core understanding of AI concepts", question: "How would you rate your understanding of core AI concepts (machine learning, deep learning, neural networks)?", options: [{ score: 1, title: "Minimal", desc: "Little to no understanding of AI concepts" }, { score: 2, title: "Basic", desc: "Familiar with basic terminology but limited practical knowledge" }, { score: 3, title: "Intermediate", desc: "Can explain concepts and understand use cases" }, { score: 4, title: "Advanced", desc: "Deep technical understanding with some hands-on experience" }, { score: 5, title: "Expert", desc: "Comprehensive knowledge with significant practical application" }] },
+  { domain: "AI Fundamentals", domainDesc: "Core understanding of AI concepts", question: "To what extent can you differentiate between various AI techniques (supervised vs. unsupervised learning, reinforcement learning)?", options: [{ score: 1, title: "Not at all", desc: "Cannot distinguish between different approaches" }, { score: 2, title: "Limited", desc: "Aware of differences but cannot explain them clearly" }, { score: 3, title: "Moderate", desc: "Can explain key differences with examples" }, { score: 4, title: "Strong", desc: "Can identify appropriate techniques for specific problems" }, { score: 5, title: "Comprehensive", desc: "Expert understanding with ability to architect solutions" }] },
+  { domain: "Data Literacy", domainDesc: "Understanding and working with data", question: "How confident are you in your ability to work with data (collection, cleaning, analysis)?", options: [{ score: 1, title: "Not confident", desc: "Minimal experience with data handling" }, { score: 2, title: "Somewhat confident", desc: "Basic data manipulation skills" }, { score: 3, title: "Moderately confident", desc: "Can perform standard data analysis tasks" }, { score: 4, title: "Very confident", desc: "Advanced data manipulation and analysis capabilities" }, { score: 5, title: "Expert level", desc: "Professional data science capabilities" }] },
+  { domain: "Data Literacy", domainDesc: "Understanding and working with data", question: "How well do you understand the importance of data quality and governance in AI projects?", options: [{ score: 1, title: "Not at all", desc: "No awareness of data quality impacts" }, { score: 2, title: "Limited", desc: "Aware but don't understand implications" }, { score: 3, title: "Moderate", desc: "Understand importance and some best practices" }, { score: 4, title: "Strong", desc: "Can implement data quality frameworks" }, { score: 5, title: "Comprehensive", desc: "Expert in data governance and quality assurance" }] },
+  { domain: "Technical Skills", domainDesc: "Programming and technical capabilities", question: "What is your proficiency level in AI-relevant programming languages (Python, R, etc.)?", options: [{ score: 1, title: "None", desc: "No programming experience" }, { score: 2, title: "Beginner", desc: "Can read and modify simple code" }, { score: 3, title: "Intermediate", desc: "Can write functional programs independently" }, { score: 4, title: "Advanced", desc: "Strong development skills with best practices" }, { score: 5, title: "Expert", desc: "Professional software engineering capabilities" }] },
+  { domain: "Technical Skills", domainDesc: "Programming and technical capabilities", question: "How familiar are you with AI/ML frameworks and tools (TensorFlow, PyTorch, scikit-learn)?", options: [{ score: 1, title: "Not familiar", desc: "Never used AI/ML frameworks" }, { score: 2, title: "Heard of them", desc: "Know they exist but haven't used them" }, { score: 3, title: "Basic usage", desc: "Can use pre-built models and basic features" }, { score: 4, title: "Proficient", desc: "Can build and train custom models" }, { score: 5, title: "Expert", desc: "Advanced framework usage and optimization" }] },
+  { domain: "AI Tools & Platforms", domainDesc: "Experience with AI tools and cloud platforms", question: "How experienced are you with cloud-based AI platforms (AWS, Azure, GCP)?", options: [{ score: 1, title: "No experience", desc: "Never used cloud AI services" }, { score: 2, title: "Limited", desc: "Aware of services but minimal hands-on" }, { score: 3, title: "Moderate", desc: "Can use basic AI services and APIs" }, { score: 4, title: "Experienced", desc: "Regularly deploy AI solutions on cloud" }, { score: 5, title: "Expert", desc: "Architect complex cloud AI infrastructures" }] },
+  { domain: "AI Tools & Platforms", domainDesc: "Experience with AI tools and cloud platforms", question: "How comfortable are you using generative AI tools (ChatGPT, Midjourney, etc.) for professional work?", options: [{ score: 1, title: "Never used", desc: "No experience with generative AI tools" }, { score: 2, title: "Occasional use", desc: "Basic usage for simple tasks" }, { score: 3, title: "Regular use", desc: "Integrate into daily workflow effectively" }, { score: 4, title: "Advanced use", desc: "Expert prompt engineering and workflow integration" }, { score: 5, title: "Power user", desc: "Create sophisticated automated workflows" }] },
+  { domain: "Ethics & Governance", domainDesc: "Understanding of AI ethics and responsible AI", question: "How well do you understand AI ethics principles (fairness, transparency, accountability)?", options: [{ score: 1, title: "Not familiar", desc: "No knowledge of AI ethics" }, { score: 2, title: "Basic awareness", desc: "Heard of concepts but can't apply them" }, { score: 3, title: "Moderate", desc: "Understand principles and can identify issues" }, { score: 4, title: "Strong", desc: "Can implement ethical frameworks" }, { score: 5, title: "Expert", desc: "Lead ethical AI governance initiatives" }] },
+  { domain: "Ethics & Governance", domainDesc: "Understanding of AI ethics and responsible AI", question: "How capable are you of identifying and mitigating bias in AI systems?", options: [{ score: 1, title: "Cannot", desc: "No understanding of AI bias" }, { score: 2, title: "Limited", desc: "Aware of bias but can't identify it" }, { score: 3, title: "Moderate", desc: "Can identify obvious bias issues" }, { score: 4, title: "Strong", desc: "Systematic bias detection and mitigation" }, { score: 5, title: "Expert", desc: "Advanced bias auditing capabilities" }] },
+  { domain: "Problem Solving", domainDesc: "Ability to identify and solve problems using AI", question: "How skilled are you at identifying business problems that could be solved with AI?", options: [{ score: 1, title: "Not skilled", desc: "Cannot identify AI opportunities" }, { score: 2, title: "Limited", desc: "Recognize obvious use cases only" }, { score: 3, title: "Moderate", desc: "Can identify good AI opportunities" }, { score: 4, title: "Strong", desc: "Systematically evaluate AI potential" }, { score: 5, title: "Expert", desc: "Strategic AI opportunity identification" }] },
+  { domain: "Problem Solving", domainDesc: "Ability to identify and solve problems using AI", question: "How effectively can you translate business requirements into AI solution specifications?", options: [{ score: 1, title: "Cannot", desc: "No ability to translate requirements" }, { score: 2, title: "Limited", desc: "Basic translation with significant help" }, { score: 3, title: "Moderate", desc: "Can create workable specifications" }, { score: 4, title: "Strong", desc: "Create detailed technical specifications" }, { score: 5, title: "Expert", desc: "Architect comprehensive AI solutions" }] },
+  { domain: "Project Management", domainDesc: "Managing AI projects and initiatives", question: "How experienced are you in managing or contributing to AI projects?", options: [{ score: 1, title: "No experience", desc: "Never involved in AI projects" }, { score: 2, title: "Limited", desc: "Participated in 1-2 small projects" }, { score: 3, title: "Moderate", desc: "Active contributor to multiple projects" }, { score: 4, title: "Experienced", desc: "Led several successful AI initiatives" }, { score: 5, title: "Expert", desc: "Portfolio of major AI transformations" }] },
+  { domain: "Project Management", domainDesc: "Managing AI projects and initiatives", question: "How well do you understand AI project lifecycle (from POC to production)?", options: [{ score: 1, title: "Not at all", desc: "No understanding of AI project phases" }, { score: 2, title: "Limited", desc: "Aware of phases but no practical experience" }, { score: 3, title: "Moderate", desc: "Understand lifecycle with some experience" }, { score: 4, title: "Strong", desc: "Successfully managed full AI lifecycles" }, { score: 5, title: "Expert", desc: "Optimize AI development methodologies" }] },
+  { domain: "Collaboration", domainDesc: "Working effectively in AI teams", question: "How effectively can you collaborate with data scientists and AI engineers?", options: [{ score: 1, title: "Ineffective", desc: "Cannot communicate with technical teams" }, { score: 2, title: "Limited", desc: "Basic communication but frequent misunderstandings" }, { score: 3, title: "Moderate", desc: "Can collaborate on standard projects" }, { score: 4, title: "Strong", desc: "Excellent technical team collaboration" }, { score: 5, title: "Expert", desc: "Bridge business and technical teams expertly" }] },
+  { domain: "Collaboration", domainDesc: "Working effectively in AI teams", question: "How comfortable are you explaining AI concepts to non-technical stakeholders?", options: [{ score: 1, title: "Not comfortable", desc: "Cannot simplify technical concepts" }, { score: 2, title: "Somewhat", desc: "Basic explanations but limited effectiveness" }, { score: 3, title: "Moderate", desc: "Can communicate most concepts clearly" }, { score: 4, title: "Very comfortable", desc: "Excellent technical communication skills" }, { score: 5, title: "Expert", desc: "Master communicator bridging all levels" }] },
+  { domain: "Industry Knowledge", domainDesc: "Understanding AI applications in your industry", question: "How well do you understand AI applications and trends in your industry?", options: [{ score: 1, title: "Not at all", desc: "No knowledge of industry AI trends" }, { score: 2, title: "Limited", desc: "Aware of some major applications" }, { score: 3, title: "Moderate", desc: "Good understanding of key use cases" }, { score: 4, title: "Strong", desc: "Comprehensive industry AI knowledge" }, { score: 5, title: "Expert", desc: "Thought leader in industry AI" }] },
+  { domain: "Industry Knowledge", domainDesc: "Understanding AI applications in your industry", question: "How aware are you of competitors' AI strategies and capabilities?", options: [{ score: 1, title: "Not aware", desc: "No knowledge of competitive AI landscape" }, { score: 2, title: "Limited", desc: "Basic awareness of major initiatives" }, { score: 3, title: "Moderate", desc: "Track key competitive developments" }, { score: 4, title: "Strong", desc: "Comprehensive competitive intelligence" }, { score: 5, title: "Expert", desc: "Strategic competitive AI analysis" }] },
+  { domain: "Continuous Learning", domainDesc: "Commitment to ongoing AI skill development", question: "How actively do you stay updated with AI developments and research?", options: [{ score: 1, title: "Not at all", desc: "No effort to follow AI developments" }, { score: 2, title: "Occasionally", desc: "Catch major news but no systematic learning" }, { score: 3, title: "Regular", desc: "Follow key sources and take courses" }, { score: 4, title: "Very active", desc: "Dedicated learning routine established" }, { score: 5, title: "Immersed", desc: "Continuous learning and experimentation" }] },
+  { domain: "Continuous Learning", domainDesc: "Commitment to ongoing AI skill development", question: "How committed are you to developing your AI skills over the next 12 months?", options: [{ score: 1, title: "Not committed", desc: "No plans for AI skill development" }, { score: 2, title: "Somewhat", desc: "Interested but no concrete plans" }, { score: 3, title: "Committed", desc: "Have specific learning goals" }, { score: 4, title: "Very committed", desc: "Dedicated time and resources allocated" }, { score: 5, title: "Extremely committed", desc: "AI skills are top development priority" }] }
+];
+
+const ORGANIZATIONAL_QUESTIONS = [
+  { domain: "Strategic Vision", domainDesc: "AI strategy and leadership alignment", question: "How clearly defined is your organization's AI vision and strategy?", options: [{ score: 1, title: "Undefined", desc: "No AI strategy exists" }, { score: 2, title: "Emerging", desc: "Informal discussions but no formal strategy" }, { score: 3, title: "Defined", desc: "Documented strategy with some alignment" }, { score: 4, title: "Integrated", desc: "Comprehensive strategy integrated with business goals" }, { score: 5, title: "Leading", desc: "AI at core of business strategy with execution roadmap" }] },
+  { domain: "Strategic Vision", domainDesc: "AI strategy and leadership alignment", question: "To what extent does leadership champion and prioritize AI initiatives?", options: [{ score: 1, title: "Not at all", desc: "No executive support for AI" }, { score: 2, title: "Limited", desc: "Awareness but low priority" }, { score: 3, title: "Moderate", desc: "Some C-level support and budget allocation" }, { score: 4, title: "Strong", desc: "Active executive sponsorship and resources" }, { score: 5, title: "Comprehensive", desc: "Board-level AI governance with strategic funding" }] },
+  { domain: "Strategic Vision", domainDesc: "AI strategy and leadership alignment", question: "How well-defined are your AI use cases and ROI expectations?", options: [{ score: 1, title: "Undefined", desc: "No identified use cases or ROI framework" }, { score: 2, title: "Exploratory", desc: "Brainstorming phase with no prioritization" }, { score: 3, title: "Defined", desc: "Prioritized use cases with estimated ROI" }, { score: 4, title: "Validated", desc: "POCs completed with measured business impact" }, { score: 5, title: "Optimized", desc: "Portfolio of scaled AI solutions with proven ROI" }] },
+  { domain: "Data Infrastructure", domainDesc: "Data quality and accessibility", question: "How would you rate the quality and completeness of your data?", options: [{ score: 1, title: "Poor", desc: "Significant quality issues and gaps" }, { score: 2, title: "Fair", desc: "Basic data available but many quality issues" }, { score: 3, title: "Good", desc: "Generally good quality with some gaps" }, { score: 4, title: "Very good", desc: "High-quality comprehensive data assets" }, { score: 5, title: "Excellent", desc: "Enterprise-grade data quality and governance" }] },
+  { domain: "Data Infrastructure", domainDesc: "Data quality and accessibility", question: "How accessible and integrated is data across your organization?", options: [{ score: 1, title: "Siloed", desc: "Data trapped in disconnected systems" }, { score: 2, title: "Fragmented", desc: "Some integration but significant silos remain" }, { score: 3, title: "Connected", desc: "Key systems integrated with central data warehouse" }, { score: 4, title: "Unified", desc: "Enterprise data platform with good accessibility" }, { score: 5, title: "Advanced", desc: "Real-time data fabric with self-service analytics" }] },
+  { domain: "Data Infrastructure", domainDesc: "Data quality and accessibility", question: "How mature is your data governance framework?", options: [{ score: 1, title: "None", desc: "No data governance practices" }, { score: 2, title: "Ad hoc", desc: "Informal practices with no standards" }, { score: 3, title: "Defined", desc: "Documented policies with limited enforcement" }, { score: 4, title: "Managed", desc: "Active governance with clear ownership" }, { score: 5, title: "Optimized", desc: "Automated governance with continuous improvement" }] },
+  { domain: "Technology & Tools", domainDesc: "AI infrastructure and platforms", question: "How advanced is your AI/ML technology infrastructure?", options: [{ score: 1, title: "None", desc: "No AI infrastructure in place" }, { score: 2, title: "Basic", desc: "Limited tools and ad hoc environments" }, { score: 3, title: "Developing", desc: "Cloud AI services and basic MLOps" }, { score: 4, title: "Advanced", desc: "Comprehensive ML platform and pipelines" }, { score: 5, title: "Leading", desc: "Enterprise AI platform with full MLOps maturity" }] },
+  { domain: "Technology & Tools", domainDesc: "AI infrastructure and platforms", question: "What is your level of cloud AI platform adoption?", options: [{ score: 1, title: "None", desc: "No cloud AI usage" }, { score: 2, title: "Experimenting", desc: "Pilot projects with cloud AI services" }, { score: 3, title: "Implementing", desc: "Active use of cloud AI for production workloads" }, { score: 4, title: "Optimizing", desc: "Multi-cloud AI strategy with FinOps practices" }, { score: 5, title: "Leading", desc: "Strategic cloud AI partnership with advanced capabilities" }] },
+  { domain: "Technology & Tools", domainDesc: "AI infrastructure and platforms", question: "How robust are your MLOps and model lifecycle management capabilities?", options: [{ score: 1, title: "None", desc: "No MLOps practices" }, { score: 2, title: "Manual", desc: "Ad hoc model deployment and monitoring" }, { score: 3, title: "Basic", desc: "Version control and basic CI/CD for models" }, { score: 4, title: "Advanced", desc: "Automated pipelines with monitoring and retraining" }, { score: 5, title: "Optimized", desc: "Full MLOps maturity with automated governance" }] },
+  { domain: "Talent & Skills", domainDesc: "AI skills and capabilities", question: "What is the depth of AI/ML expertise in your organization?", options: [{ score: 1, title: "Minimal", desc: "No dedicated AI talent" }, { score: 2, title: "Emerging", desc: "1-2 data scientists or consultants" }, { score: 3, title: "Building", desc: "Small AI team with mixed capabilities" }, { score: 4, title: "Strong", desc: "Established AI center of excellence" }, { score: 5, title: "Leading", desc: "World-class AI team with specialized experts" }] },
+  { domain: "Talent & Skills", domainDesc: "AI skills and capabilities", question: "How comprehensive is your AI training and upskilling program?", options: [{ score: 1, title: "None", desc: "No AI training programs" }, { score: 2, title: "Ad hoc", desc: "Individual training without coordination" }, { score: 3, title: "Developing", desc: "Structured programs for some roles" }, { score: 4, title: "Comprehensive", desc: "Organization-wide AI literacy program" }, { score: 5, title: "Leading", desc: "Continuous learning culture with AI certifications" }] },
+  { domain: "Talent & Skills", domainDesc: "AI skills and capabilities", question: "How effective is your AI talent acquisition and retention?", options: [{ score: 1, title: "Struggling", desc: "Cannot attract or retain AI talent" }, { score: 2, title: "Challenging", desc: "High turnover and recruitment difficulties" }, { score: 3, title: "Moderate", desc: "Can hire but competitive pressures exist" }, { score: 4, title: "Strong", desc: "Attractive employer with good retention" }, { score: 5, title: "Exceptional", desc: "Employer of choice for AI professionals" }] },
+  { domain: "Governance & Ethics", domainDesc: "AI governance and responsible AI", question: "How mature is your AI governance framework?", options: [{ score: 1, title: "None", desc: "No AI governance structure" }, { score: 2, title: "Informal", desc: "Ad hoc reviews without formal process" }, { score: 3, title: "Developing", desc: "Basic policies and review committees" }, { score: 4, title: "Established", desc: "Comprehensive governance with clear processes" }, { score: 5, title: "Leading", desc: "Automated governance with ethical AI certification" }] },
+  { domain: "Governance & Ethics", domainDesc: "AI governance and responsible AI", question: "How effectively do you address AI ethics, bias, and fairness?", options: [{ score: 1, title: "Not addressed", desc: "No consideration of AI ethics" }, { score: 2, title: "Aware", desc: "Awareness but no systematic approach" }, { score: 3, title: "Developing", desc: "Basic bias testing and documentation" }, { score: 4, title: "Managed", desc: "Systematic bias detection and mitigation" }, { score: 5, title: "Leading", desc: "Industry-leading responsible AI practices" }] },
+  { domain: "Governance & Ethics", domainDesc: "AI governance and responsible AI", question: "How robust is your AI risk management and compliance?", options: [{ score: 1, title: "None", desc: "No AI risk management" }, { score: 2, title: "Reactive", desc: "Address issues as they arise" }, { score: 3, title: "Defined", desc: "Risk frameworks with some monitoring" }, { score: 4, title: "Proactive", desc: "Comprehensive risk management with controls" }, { score: 5, title: "Advanced", desc: "Integrated risk management with continuous monitoring" }] },
+  { domain: "Process Integration", domainDesc: "AI integration into business processes", question: "How well integrated is AI into your core business processes?", options: [{ score: 1, title: "Not integrated", desc: "AI exists only as isolated experiments" }, { score: 2, title: "Piloting", desc: "A few pilot integrations underway" }, { score: 3, title: "Partial", desc: "AI integrated into several key processes" }, { score: 4, title: "Extensive", desc: "AI widely deployed across business functions" }, { score: 5, title: "Transformative", desc: "AI fundamentally reshaping operations" }] },
+  { domain: "Process Integration", domainDesc: "AI integration into business processes", question: "How mature is your AI deployment and scaling capability?", options: [{ score: 1, title: "None", desc: "Cannot deploy AI to production" }, { score: 2, title: "Manual", desc: "One-off deployments with significant effort" }, { score: 3, title: "Repeatable", desc: "Documented deployment processes" }, { score: 4, title: "Scalable", desc: "Automated deployment pipelines" }, { score: 5, title: "Optimized", desc: "Continuous delivery with automated scaling" }] },
+  { domain: "Process Integration", domainDesc: "AI integration into business processes", question: "How effective is your change management for AI initiatives?", options: [{ score: 1, title: "None", desc: "No change management for AI" }, { score: 2, title: "Ad hoc", desc: "Reactive to adoption issues" }, { score: 3, title: "Planned", desc: "Basic change management activities" }, { score: 4, title: "Comprehensive", desc: "Structured change programs with training" }, { score: 5, title: "Leading", desc: "Proactive adoption culture with champions network" }] },
+  { domain: "Innovation Culture", domainDesc: "Culture of experimentation and innovation", question: "How strong is your culture of AI experimentation and innovation?", options: [{ score: 1, title: "Resistant", desc: "Culture resistant to AI adoption" }, { score: 2, title: "Skeptical", desc: "Some interest but significant resistance" }, { score: 3, title: "Open", desc: "Generally supportive with pockets of enthusiasm" }, { score: 4, title: "Embracing", desc: "Strong innovation culture with AI champions" }, { score: 5, title: "Leading", desc: "AI-first mindset across organization" }] },
+  { domain: "Innovation Culture", domainDesc: "Culture of experimentation and innovation", question: "How well do you balance AI experimentation with operational stability?", options: [{ score: 1, title: "Poor", desc: "Either too rigid or too chaotic" }, { score: 2, title: "Struggling", desc: "Tension between innovation and stability" }, { score: 3, title: "Balanced", desc: "Clear innovation tracks with guardrails" }, { score: 4, title: "Optimized", desc: "Effective sandbox environments and processes" }, { score: 5, title: "Leading", desc: "Continuous innovation with robust governance" }] },
+  { domain: "Innovation Culture", domainDesc: "Culture of experimentation and innovation", question: "How effectively do you share AI knowledge and best practices?", options: [{ score: 1, title: "Not at all", desc: "Knowledge siloed in individuals/teams" }, { score: 2, title: "Limited", desc: "Informal sharing with no structure" }, { score: 3, title: "Developing", desc: "Some communities of practice and documentation" }, { score: 4, title: "Strong", desc: "Active knowledge sharing culture and platforms" }, { score: 5, title: "Leading", desc: "Comprehensive knowledge management and learning systems" }] },
+  { domain: "Business Impact", domainDesc: "Measurable AI business value", question: "How significant is the business value delivered by your AI initiatives?", options: [{ score: 1, title: "None", desc: "No measurable business impact" }, { score: 2, title: "Minimal", desc: "Small cost savings or efficiency gains" }, { score: 3, title: "Moderate", desc: "Tangible ROI from multiple use cases" }, { score: 4, title: "Significant", desc: "Major impact on revenue or costs" }, { score: 5, title: "Transformative", desc: "AI driving competitive advantage and growth" }] },
+  { domain: "Business Impact", domainDesc: "Measurable AI business value", question: "How effectively do you measure and communicate AI ROI?", options: [{ score: 1, title: "Not at all", desc: "No ROI measurement framework" }, { score: 2, title: "Ad hoc", desc: "Inconsistent or anecdotal impact stories" }, { score: 3, title: "Developing", desc: "Basic metrics tracked for some projects" }, { score: 4, title: "Systematic", desc: "Comprehensive ROI framework with reporting" }, { score: 5, title: "Optimized", desc: "Real-time business value dashboards and attribution" }] },
+  { domain: "Business Impact", domainDesc: "Measurable AI business value", question: "How sustainable and scalable is your AI business impact?", options: [{ score: 1, title: "Not sustainable", desc: "Projects fail after initial implementation" }, { score: 2, title: "Fragile", desc: "Value depends on key individuals" }, { score: 3, title: "Stable", desc: "Impact maintained but hard to scale" }, { score: 4, title: "Growing", desc: "Consistent expansion of AI business value" }, { score: 5, title: "Compounding", desc: "AI value accelerating with network effects" }] },
+  { domain: "External Partnerships", domainDesc: "Collaboration with external AI ecosystem", question: "How strategic is your approach to AI partnerships and ecosystem?", options: [{ score: 1, title: "None", desc: "No external AI partnerships" }, { score: 2, title: "Transactional", desc: "Ad hoc vendor relationships" }, { score: 3, title: "Developing", desc: "Selected strategic partnerships" }, { score: 4, title: "Strategic", desc: "Portfolio of complementary partnerships" }, { score: 5, title: "Leading", desc: "Ecosystem orchestrator with co-innovation" }] }
+];
+
+const MATURITY_LEVELS = {
+  individual: [{ min: 0, max: 20, level: 'AI Beginner', color: '#E53935', desc: 'Starting your AI journey' }, { min: 21, max: 40, level: 'AI Explorer', color: '#FB8C00', desc: 'Building foundational knowledge' }, { min: 41, max: 60, level: 'AI Adopter', color: '#00B8B8', desc: 'Actively developing AI skills' }, { min: 61, max: 80, level: 'AI Practitioner', color: '#00D4D4', desc: 'Applying AI effectively' }, { min: 81, max: 100, level: 'AI Leader', color: '#00E5E5', desc: 'Driving AI transformation' }],
+  organizational: [{ min: 0, max: 20, level: 'AI Aware', color: '#E53935', desc: 'Beginning to explore AI' }, { min: 21, max: 40, level: 'AI Experimenting', color: '#FB8C00', desc: 'Running initial pilots' }, { min: 41, max: 60, level: 'AI Scaling', color: '#00B8B8', desc: 'Expanding AI adoption' }, { min: 61, max: 80, level: 'AI Integrated', color: '#00D4D4', desc: 'AI embedded in operations' }, { min: 81, max: 100, level: 'AI Native', color: '#00E5E5', desc: 'AI-first organization' }]
+};
+
+
+// Professional SVG Icons
+const Icons = {
+  user: (props = {}) => <svg width={props.size || 48} height={props.size || 48} viewBox="0 0 24 24" fill="none" stroke={props.color || BRAND.cyan} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  building: (props = {}) => <svg width={props.size || 48} height={props.size || 48} viewBox="0 0 24 24" fill="none" stroke={props.color || BRAND.cyan} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z"/><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2"/><path d="M10 6h4"/><path d="M10 10h4"/><path d="M10 14h4"/><path d="M10 18h4"/></svg>,
+  chart: (props = {}) => <svg width={props.size || 18} height={props.size || 18} viewBox="0 0 24 24" fill="none" stroke={props.color || BRAND.gray} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/></svg>,
+  clock: (props = {}) => <svg width={props.size || 18} height={props.size || 18} viewBox="0 0 24 24" fill="none" stroke={props.color || BRAND.gray} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>,
+  lightbulb: (props = {}) => <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke={props.color || BRAND.cyan} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>,
+  check: (props = {}) => <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke={props.color || BRAND.cyan} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>,
+  zap: (props = {}) => <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke={props.color || "#FB8C00"} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+  target: (props = {}) => <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke={props.color || BRAND.cyan} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></svg>,
+  download: (props = {}) => <svg width={props.size || 18} height={props.size || 18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  arrowLeft: (props = {}) => <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  arrowRight: (props = {}) => <svg width={props.size || 20} height={props.size || 20} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>,
+};
+
+
+const DB_KEY = 'arq-alpha-database';
+
+const Logo = ({ size = 'default' }) => {
+  const s = { small: 28, default: 36, large: 44 }[size];
+  const textSize = { small: 'text-xs sm:text-sm', default: 'text-sm sm:text-lg', large: 'text-lg' }[size];
+  const hideText = size === 'small';
+  return (
+    <div className="flex items-center gap-2 sm:gap-3">
+      <div className="relative flex items-center justify-center flex-shrink-0" style={{ width: s, height: s }}>
+        <div className="absolute inset-0 border-2 rounded-sm" style={{ borderColor: BRAND.cyan, transform: 'rotate(45deg)', background: 'linear-gradient(135deg, rgba(0,229,229,0.05) 0%, rgba(0,229,229,0.15) 100%)', boxShadow: '0 0 20px rgba(0,229,229,0.3)' }}>
+          <div className="absolute top-1/2 left-1/2 w-3/5 h-3/5 -translate-x-1/2 -translate-y-1/2" style={{ backgroundColor: BRAND.cyan, opacity: 0.4 }} />
+        </div>
+      </div>
+      <div className={`flex-col ${hideText ? 'hidden sm:flex' : 'flex'}`}>
+        <span className="text-[8px] sm:text-xs tracking-wider" style={{ color: BRAND.gray, direction: 'rtl' }}>كامبس دبي للذكاء الاصطناعي</span>
+        <span className={`${textSize} font-bold tracking-wide`} style={{ color: BRAND.white }}>DUBAI AI CAMPUS</span>
+      </div>
+    </div>
+  );
+};
+
+const WaveBackground = () => (
+  <div className="fixed inset-0 overflow-hidden pointer-events-none" style={{ zIndex: 0 }}>
+    <div className="absolute inset-0">{[15, 25, 35, 45, 55, 65, 75, 85].map((top, i) => (<div key={i} className="absolute h-0.5" style={{ top: `${top}%`, width: `${60 + (i % 3) * 15}%`, background: `linear-gradient(90deg, transparent 0%, ${BRAND.cyan} 50%, transparent 100%)`, opacity: 0.15, animation: `flowRight ${15 + i * 2}s linear infinite`, animationDelay: `${i * 0.5}s` }} />))}</div>
+    <svg className="absolute bottom-0 left-0 w-full h-2/5 opacity-10" viewBox="0 0 1440 400" preserveAspectRatio="none">
+      <defs><linearGradient id="waveGrad" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stopColor={BRAND.cyanDark} /><stop offset="50%" stopColor={BRAND.cyan} /><stop offset="100%" stopColor={BRAND.cyanLight} /></linearGradient></defs>
+      {[...Array(8)].map((_, i) => (<path key={i} d={`M0,${350 - i * 12} Q360,${300 - i * 20 + Math.sin(i) * 40} 720,${320 - i * 15} T1440,${280 - i * 18}`} stroke="url(#waveGrad)" strokeWidth="2" fill="none" opacity={0.3 + i * 0.08} />))}
+    </svg>
+    <style>{`@keyframes flowRight { 0% { left: -100%; } 100% { left: 100%; } }`}</style>
+  </div>
+);
+
+const AlphaBadge = () => (<span className="inline-block px-3 py-1 rounded-full text-sm font-bold tracking-wider" style={{ background: 'linear-gradient(135deg, rgba(0,229,229,0.2) 0%, rgba(0,229,229,0.1) 100%)', border: '1px solid rgba(0,229,229,0.5)', color: BRAND.cyan }}>ALPHA</span>);
+
+export default function ARQAlphaApp() {
+  const [currentView, setCurrentView] = useState('home');
+  const [assessmentType, setAssessmentType] = useState(null);
+  const [userInfo, setUserInfo] = useState({ organizationName: '', industry: '', country: '', department: '', employeeCount: '', assessorName: '', assessorEmail: '', role: '' });
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [answers, setAnswers] = useState({});
+  const [results, setResults] = useState(null);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [atlasRecommendation, setAtlasRecommendation] = useState(null);
+  const topRef = useRef(null);
+
+  const questions = assessmentType === 'individual' ? INDIVIDUAL_QUESTIONS : ORGANIZATIONAL_QUESTIONS;
+
+  useEffect(() => { if (currentView === 'assessment' && topRef.current) topRef.current.scrollIntoView({ behavior: 'smooth' }); }, [currentQuestionIndex]);
+
+  const calculateResults = () => {
+    const domainScores = {};
+    let totalScore = 0;
+    questions.forEach((q, idx) => { const answer = answers[idx]; if (answer !== undefined) { const score = q.options[answer].score; if (!domainScores[q.domain]) domainScores[q.domain] = { total: 0, count: 0, desc: q.domainDesc }; domainScores[q.domain].total += score; domainScores[q.domain].count += 1; totalScore += score; } });
+    const maxScore = questions.length * 5;
+    const percentageScore = Math.round((totalScore / maxScore) * 100);
+    const levels = MATURITY_LEVELS[assessmentType];
+    const maturityLevel = levels.find(l => percentageScore >= l.min && percentageScore <= l.max) || levels[0];
+    const domainAverages = {};
+    Object.entries(domainScores).forEach(([domain, data]) => { domainAverages[domain] = { average: data.total / data.count, percentage: Math.round((data.total / (data.count * 5)) * 100), desc: data.desc }; });
+    return { percentageScore, maturityLevel, domainScores: domainAverages, totalScore, maxScore };
+  };
+
+  const saveToDatabase = async (resultData, analysis) => {
+    try {
+      const record = { id: Date.now().toString(), type: assessmentType, timestamp: new Date().toISOString(), organization: userInfo.organizationName, industry: userInfo.industry, country: userInfo.country, department: userInfo.department, employeeCount: userInfo.employeeCount, assessorName: userInfo.assessorName, assessorEmail: userInfo.assessorEmail, role: userInfo.role, overallScore: resultData.percentageScore, readinessLevel: resultData.maturityLevel.level, domainScores: resultData.domainScores, responses: answers, aiAnalysis: analysis };
+      // Save to local storage for backwards compatibility
+      let database = [];
+      try { const dbResult = { value: localStorage.getItem(DB_KEY) }; if (dbResult?.value) database = JSON.parse(dbResult.value); } catch (e) { database = []; }
+      database.push(record);
+      localStorage.setItem(DB_KEY, JSON.stringify(database));
+      // Save to server API for shared access
+      try { 
+        const response = await fetch('/api/assessments', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'alpha', record }) });
+        const result = await response.json();
+        console.log('Server save result:', result);
+      } catch (e) { console.log('Server save failed:', e); }
+    } catch (e) { console.error('Failed to save:', e); }
+  };
+
+  const generateAIAnalysis = async (resultData) => {
+    setIsAnalyzing(true);
+    const prompt = assessmentType === 'individual' 
+      ? `You are a senior AI skills development consultant. Analyze this individual AI literacy assessment:\nPROFILE: Name: ${userInfo.assessorName}, Role: ${userInfo.role}, Organization: ${userInfo.organizationName}, Industry: ${userInfo.industry}, Size: ${userInfo.employeeCount}, Country: ${userInfo.country}\nRESULTS: Overall Score: ${resultData.percentageScore}% (${resultData.maturityLevel.level})\nDomain Scores: ${Object.entries(resultData.domainScores).map(([d, s]) => d + ': ' + s.percentage + '%').join(', ')}\nReturn JSON only: {"executiveSummary":"2-3 sentences","roleAlignment":"how skills match role expectations","keyStrengths":[{"area":"domain","insight":"strength"}],"developmentAreas":[{"area":"domain","insight":"gap","priority":"HIGH/MEDIUM/LOW"}],"skillsToDevelope":[{"skill":"name","description":"why important","trainingType":"Course/Workshop/Certification/Self-study"}],"recommendedNextSteps":["action1","action2","action3"],"careerTip":"one sentence advice"}`
+      : `You are a senior AI transformation consultant. Analyze this organizational AI readiness assessment:\nORGANIZATION: Name: ${userInfo.organizationName}, Industry: ${userInfo.industry}, Size: ${userInfo.employeeCount}, Country: ${userInfo.country}, Assessor Role: ${userInfo.role}\nRESULTS: Overall Score: ${resultData.percentageScore}% (${resultData.maturityLevel.level})\nDomain Scores: ${Object.entries(resultData.domainScores).map(([d, s]) => d + ': ' + s.percentage + '%').join(', ')}\nReturn JSON only: {"executiveSummary":"2-3 sentences","maturityAnalysis":"current state analysis","keyStrengths":[{"area":"domain","insight":"strength"}],"criticalGaps":[{"area":"domain","insight":"gap","priority":"HIGH/MEDIUM/LOW"}],"strategicRecommendations":[{"recommendation":"what","rationale":"why","timeframe":"immediate/short-term/medium-term"}],"capabilitiesToBuild":[{"capability":"name","description":"why needed","trainingFocus":"Leadership/Technical/Process"}],"investmentPriorities":["priority1","priority2","priority3"],"industryContext":"one sentence about AI in their industry"}`;
+
+    let analysisData = null;
+    try {
+      const response = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: assessmentType, userInfo, results: resultData }) });
+      if (!response.ok) throw new Error('API request failed');
+      analysisData = await response.json();
+      setAiAnalysis(analysisData);
+    } catch (e) {
+      const sortedDomains = Object.entries(resultData.domainScores).sort((a, b) => b[1].percentage - a[1].percentage);
+      analysisData = assessmentType === 'individual' ? { executiveSummary: `You are at the ${resultData.maturityLevel.level} level with ${resultData.percentageScore}% overall score.`, roleAlignment: `Your AI literacy provides a foundation for ${userInfo.role}.`, keyStrengths: sortedDomains.slice(0, 2).map(([d, s]) => ({ area: d, insight: `Strong at ${s.percentage}%` })), developmentAreas: sortedDomains.slice(-2).reverse().map(([d, s]) => ({ area: d, insight: `Growth area at ${s.percentage}%`, priority: s.percentage < 40 ? 'HIGH' : 'MEDIUM' })), skillsToDevelope: [{ skill: 'AI Fundamentals', description: 'Core concepts for AI work', trainingType: 'Course' }], recommendedNextSteps: ['Complete an AI fundamentals course', 'Practice with generative AI tools'], careerTip: 'AI skills are becoming essential.' } : { executiveSummary: `${userInfo.organizationName} is at ${resultData.maturityLevel.level} with ${resultData.percentageScore}% readiness.`, maturityAnalysis: `At ${resultData.maturityLevel.level}, your organization ${resultData.maturityLevel.desc.toLowerCase()}.`, keyStrengths: sortedDomains.slice(0, 2).map(([d, s]) => ({ area: d, insight: `Leading at ${s.percentage}%` })), criticalGaps: sortedDomains.slice(-2).reverse().map(([d, s]) => ({ area: d, insight: `Needs attention at ${s.percentage}%`, priority: s.percentage < 40 ? 'HIGH' : 'MEDIUM' })), strategicRecommendations: [{ recommendation: 'Establish AI governance', rationale: 'Foundation for responsible AI', timeframe: 'immediate' }], capabilitiesToBuild: [{ capability: 'Data Infrastructure', description: 'Enable AI initiatives', trainingFocus: 'Technical' }], investmentPriorities: ['Data platform', 'AI talent'], industryContext: `AI adoption in ${userInfo.industry || 'your industry'} is accelerating.` };
+      setAiAnalysis(analysisData);
+    }
+    setIsAnalyzing(false);
+    await saveToDatabase(resultData, analysisData);
+  };
+
+  
+
+  const exportToEmail = () => {
+    const subject = encodeURIComponent(`ARQ Alpha Assessment Results - ${userInfo.assessorName || userInfo.organizationName}`);
+    const body = encodeURIComponent(`ARQ™ Alpha Assessment Report
+================================
+
+Assessment Type: ${assessmentType === 'individual' ? 'Individual AI Literacy' : 'Organizational AI Readiness'}
+Date: ${new Date().toLocaleDateString()}
+
+PROFILE
+-------
+${assessmentType === 'individual' ? `Name: ${userInfo.assessorName}
+Role: ${userInfo.role}` : ''}
+Organization: ${userInfo.organizationName}
+Industry: ${userInfo.industry || 'Not specified'}
+Country: ${userInfo.country || 'Not specified'}
+
+RESULTS
+-------
+Overall Score: ${results?.percentageScore}%
+Readiness Level: ${results?.maturityLevel?.level}
+
+Domain Scores:
+${Object.entries(results?.domainScores || {}).map(([d, s]) => `• ${d}: ${s.percentage}%`).join('\n')}
+
+EXECUTIVE SUMMARY
+-----------------
+${aiAnalysis?.executiveSummary || 'Analysis not available'}
+
+KEY STRENGTHS
+-------------
+${(aiAnalysis?.keyStrengths || []).map(s => `• ${s.area}: ${s.insight}`).join('\n')}
+
+${assessmentType === 'individual' ? 'DEVELOPMENT AREAS' : 'CRITICAL GAPS'}
+${'-'.repeat(assessmentType === 'individual' ? 17 : 13)}
+${(aiAnalysis?.developmentAreas || aiAnalysis?.criticalGaps || []).map(g => `• ${g.area} (${g.priority}): ${g.insight}`).join('\n')}
+
+RECOMMENDED NEXT STEPS
+----------------------
+${(aiAnalysis?.recommendedNextSteps || aiAnalysis?.investmentPriorities || []).map((s, i) => `${i + 1}. ${typeof s === 'string' ? s : s.recommendation}`).join('\n')}
+
+${aiAnalysis?.careerTip ? `CAREER TIP: ${aiAnalysis.careerTip}` : ''}
+
+---
+Report generated by ARQ™ Alpha | Dubai AI Campus | DIFC Innovation Hub
+Visit: https://arq-assessment.vercel.app
+`);
+    const email = userInfo.assessorEmail || '';
+    window.location.href = `mailto:${email}?subject=${subject}&body=${body}`;
+  };
+
+  const handleAnswer = (optionIndex) => { setAnswers(prev => ({ ...prev, [currentQuestionIndex]: optionIndex })); if (currentQuestionIndex < questions.length - 1) setTimeout(() => setCurrentQuestionIndex(prev => prev + 1), 300); };
+  const completeAssessment = () => { const resultData = calculateResults(); setResults(resultData); generateAIAnalysis(resultData); setCurrentView('results'); };
+  
+  const exportToPDF = () => {
+    setIsExporting(true);
+    const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>ARQ Alpha Report</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:'Segoe UI',Arial,sans-serif;background:#000;color:#fff;padding:40px;line-height:1.6}.header{display:flex;justify-content:space-between;align-items:start;margin-bottom:40px;padding-bottom:30px;border-bottom:2px solid #00E5E5}.score-section{text-align:center;margin-bottom:40px}.score-value{font-size:80px;font-weight:800;color:${results?.maturityLevel.color}}.maturity-level{display:inline-block;padding:10px 24px;border-radius:30px;font-size:20px;font-weight:700;background:${results?.maturityLevel.color}20;border:2px solid ${results?.maturityLevel.color};color:${results?.maturityLevel.color}}.info-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-bottom:40px;padding:25px;background:#111;border-radius:12px}.info-label{font-size:12px;color:#666;text-transform:uppercase}.info-value{font-size:16px}.section{margin-bottom:35px}.section-title{font-size:22px;font-weight:700;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid #333}.domain-item{display:flex;align-items:center;margin-bottom:15px}.domain-name{width:200px;font-size:14px;color:#ccc}.domain-bar{flex:1;height:12px;background:#222;border-radius:6px;margin:0 15px;overflow:hidden}.domain-fill{height:100%;border-radius:6px}.domain-score{width:50px;text-align:right;font-size:16px;font-weight:700}.summary-box{background:rgba(0,229,229,0.08);border:1px solid rgba(0,229,229,0.3);border-radius:12px;padding:25px;margin-bottom:30px}.two-col{display:grid;grid-template-columns:1fr 1fr;gap:25px;margin-bottom:30px}.card{background:#111;border-radius:12px;padding:25px}.card-title{font-size:18px;font-weight:700;margin-bottom:15px}.card-title.cyan{color:#00E5E5}.card-title.orange{color:#FB8C00}.list-item{padding:12px 0;border-bottom:1px solid #222}.list-item:last-child{border-bottom:none}.list-item-title{font-size:15px;font-weight:600;margin-bottom:4px}.list-item-desc{font-size:13px;color:#888}.skill-item{background:#0a0a0a;padding:15px;border-radius:8px;border-left:3px solid #00E5E5;margin-bottom:10px}.skill-name{font-size:15px;font-weight:600;color:#00E5E5;margin-bottom:5px}.skill-desc{font-size:13px;color:#888}.next-steps{background:linear-gradient(135deg,rgba(0,229,229,0.1)0%,rgba(0,0,0,0)100%);border:1px solid rgba(0,229,229,0.3);border-radius:12px;padding:25px}.step-item{display:flex;align-items:flex-start;gap:12px;margin-bottom:12px}.step-number{width:28px;height:28px;background:#00E5E5;color:#000;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700}.step-text{font-size:15px;color:#ccc;padding-top:3px}.footer{text-align:center;margin-top:50px;padding-top:30px;border-top:1px solid #333;color:#666}@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact}}</style></head><body><div class="header"><div><div style="font-size:20px;font-weight:700">DUBAI AI CAMPUS</div><div style="font-size:12px;color:#888">كامبس دبي للذكاء الاصطناعي</div></div><div style="text-align:right"><span style="background:rgba(0,229,229,0.15);border:1px solid rgba(0,229,229,0.5);color:#00E5E5;padding:4px 12px;border-radius:20px;font-size:12px;font-weight:700">ARQ™ ALPHA</span><div style="margin-top:8px;font-size:14px;color:#888">${assessmentType === 'individual' ? 'Individual AI Literacy' : 'Organizational AI Readiness'}</div></div></div><div class="score-section"><div style="font-size:18px;color:#888;margin-bottom:10px">Overall Score</div><div class="score-value">${results?.percentageScore}%</div><div class="maturity-level">${results?.maturityLevel.level}</div></div><div class="info-grid">${assessmentType === 'individual' ? `<div><div class="info-label">Name</div><div class="info-value">${userInfo.assessorName}</div></div><div><div class="info-label">Role</div><div class="info-value">${userInfo.role}</div></div>` : ''}<div><div class="info-label">Organization</div><div class="info-value">${userInfo.organizationName}</div></div><div><div class="info-label">Industry</div><div class="info-value">${userInfo.industry || 'Not specified'}</div></div><div><div class="info-label">Country</div><div class="info-value">${userInfo.country || 'Not specified'}</div></div><div><div class="info-label">Date</div><div class="info-value">${new Date().toLocaleDateString()}</div></div></div><div class="section"><div class="section-title">Domain Scores</div>${Object.entries(results?.domainScores || {}).map(([domain, data]) => { const color = data.percentage >= 80 ? '#00E5E5' : data.percentage >= 60 ? '#00B8B8' : data.percentage >= 40 ? '#FB8C00' : '#E53935'; return `<div class="domain-item"><div class="domain-name">${domain}</div><div class="domain-bar"><div class="domain-fill" style="width:${data.percentage}%;background:${color}"></div></div><div class="domain-score" style="color:${color}">${data.percentage}%</div></div>`; }).join('')}</div>${aiAnalysis ? `<div class="summary-box"><div style="font-size:18px;color:#ccc">${aiAnalysis.executiveSummary}</div></div><div class="two-col"><div class="card"><div class="card-title cyan">Key Strengths</div>${(aiAnalysis.keyStrengths || []).map(s => `<div class="list-item"><div class="list-item-title">${s.area}</div><div class="list-item-desc">${s.insight}</div></div>`).join('')}</div><div class="card"><div class="card-title orange">${assessmentType === 'individual' ? 'Development Areas' : 'Critical Gaps'}</div>${(aiAnalysis.developmentAreas || aiAnalysis.criticalGaps || []).map(g => `<div class="list-item"><div class="list-item-title">${g.area}</div><div class="list-item-desc">${g.insight}</div></div>`).join('')}</div></div><div class="section"><div class="section-title">${assessmentType === 'individual' ? 'Skills to Develop' : 'Capabilities to Build'}</div>${(aiAnalysis.skillsToDevelope || aiAnalysis.capabilitiesToBuild || []).map(s => `<div class="skill-item"><div class="skill-name">${s.skill || s.capability}</div><div class="skill-desc">${s.description}</div></div>`).join('')}</div><div class="next-steps"><div class="section-title" style="border-bottom:none;margin-bottom:15px">Recommended Next Steps</div>${(aiAnalysis.recommendedNextSteps || aiAnalysis.investmentPriorities || []).map((step, i) => `<div class="step-item"><div class="step-number">${i + 1}</div><div class="step-text">${typeof step === 'string' ? step : step.recommendation}</div></div>`).join('')}</div>` : ''}<div class="footer">ARQ™ Alpha Assessment · DUBAI AI CAMPUS · DIFC Innovation Hub · ${new Date().toLocaleDateString()}</div></body></html>`;
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const printWindow = window.open(url, '_blank');
+    if (printWindow) { printWindow.onload = () => { setTimeout(() => { printWindow.print(); setIsExporting(false); }, 500); }; } 
+    else { const a = document.createElement('a'); a.href = url; a.download = `ARQ_Alpha_${assessmentType}_${userInfo.organizationName.replace(/\s+/g, '_')}.html`; a.click(); setIsExporting(false); }
+    URL.revokeObjectURL(url);
+  };
+
+  const startNew = (type) => { setAssessmentType(type); setCurrentQuestionIndex(0); setAnswers({}); setResults(null); setAiAnalysis(null); setCurrentView('userInfo'); };
+
+  const pageStyle = { backgroundColor: BRAND.black, minHeight: '100vh' };
+  const cardStyle = { backgroundColor: BRAND.navy, border: '1px solid rgba(0,229,229,0.2)', borderRadius: '16px' };
+  const inputStyle = { backgroundColor: BRAND.deepNavy, border: '1px solid rgba(0,229,229,0.3)', color: BRAND.white, borderRadius: '12px' };
+  const btnPrimary = { background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`, color: BRAND.black, fontWeight: 700 };
+  const btnSecondary = { backgroundColor: 'transparent', color: BRAND.cyan, border: `1px solid ${BRAND.cyan}` };
+
+  if (currentView === 'home') return (
+    <div style={pageStyle} className="relative"><WaveBackground /><div className="relative z-10 max-w-4xl mx-auto px-6 py-12"><div className="flex items-center justify-between mb-16"><Logo /><AlphaBadge /></div><div className="text-center mb-16"><h1 className="text-3xl sm:text-5xl md:text-6xl font-light mb-6" style={{ color: BRAND.white }}><span style={{ color: BRAND.cyan }}>ARQ</span>™ Alpha</h1><p className="text-xl md:text-2xl max-w-2xl mx-auto mb-4" style={{ color: BRAND.grayLight }}>AI Readiness Quick Assessment</p><p className="text-lg" style={{ color: BRAND.gray }}>A rapid diagnostic to measure AI literacy and organizational readiness</p></div><div className="grid md:grid-cols-2 gap-8 mb-12"><button onClick={() => startNew('individual')} className="group text-left p-8 transition-all hover:scale-[1.02]" style={{ ...cardStyle, boxShadow: '0 0 40px rgba(0,229,229,0.1)' }}><div className="mb-6">{Icons.user({ size: 56 })}</div><h2 className="text-2xl font-bold mb-3" style={{ color: BRAND.white }}>Individual Assessment</h2><p className="text-lg mb-6" style={{ color: BRAND.grayLight }}>Measure your personal AI literacy across technical skills, tools proficiency, and strategic thinking</p><div className="flex items-center gap-6 text-base" style={{ color: BRAND.gray }}><span className="flex items-center gap-1">{Icons.clock()} 8-10 min</span><span className="flex items-center gap-1">{Icons.chart()} 20 questions</span></div></button><button onClick={() => startNew('organizational')} className="group text-left p-8 transition-all hover:scale-[1.02]" style={cardStyle}><div className="mb-6">{Icons.building({ size: 56 })}</div><h2 className="text-2xl font-bold mb-3" style={{ color: BRAND.white }}>Organizational Assessment</h2><p className="text-lg mb-6" style={{ color: BRAND.grayLight }}>Assess your enterprise's AI maturity across strategy, data, technology, and governance</p><div className="flex items-center gap-6 text-base" style={{ color: BRAND.gray }}><span className="flex items-center gap-1">{Icons.clock()} 12-15 min</span><span className="flex items-center gap-1">{Icons.chart()} 25 questions</span></div></button></div><div className="text-center" style={{ color: BRAND.gray }}><p>ARQ Alpha is a quick diagnostic. For comprehensive assessment, contact Dubai AI Campus for the full ARQ™ (80 questions).</p></div></div></div>
+  );
+
+  if (currentView === 'userInfo') return (
+    <div style={pageStyle} className="relative"><WaveBackground /><div className="relative z-10 max-w-2xl mx-auto px-6 py-12"><div className="flex items-center justify-between mb-10"><button onClick={() => setCurrentView('home')} className="text-lg" style={{ color: BRAND.gray }}>← Back</button><div className="flex items-center gap-3"><Logo size="small" /><AlphaBadge /></div></div><div className="p-8" style={cardStyle}><div className="flex items-center gap-3 mb-2">{assessmentType === 'individual' ? Icons.user({ size: 36 }) : Icons.building({ size: 36 })}<h2 className="text-2xl font-bold" style={{ color: BRAND.white }}>{assessmentType === 'individual' ? 'Individual Assessment' : 'Organizational Assessment'}</h2></div><p className="text-lg mb-8" style={{ color: BRAND.gray }}>Please provide some information before starting</p><div className="space-y-5">{assessmentType === 'individual' && <div><label className="block text-base font-medium mb-2" style={{ color: BRAND.white }}>Your Name *</label><input type="text" value={userInfo.assessorName} onChange={e => setUserInfo({...userInfo, assessorName: e.target.value})} className="w-full px-4 py-3 text-lg focus:outline-none" style={inputStyle} placeholder="Enter your name" /></div>}<div><label className="block text-base font-medium mb-2" style={{ color: BRAND.white }}>Organization Name *</label><input type="text" value={userInfo.organizationName} onChange={e => setUserInfo({...userInfo, organizationName: e.target.value})} className="w-full px-4 py-3 text-lg focus:outline-none" style={inputStyle} placeholder="Enter organization name" /></div><div><label className="block text-base font-medium mb-2" style={{ color: BRAND.white }}>Your Role / Function *</label><select value={userInfo.role} onChange={e => setUserInfo({...userInfo, role: e.target.value})} className="w-full px-4 py-3 text-lg focus:outline-none" style={inputStyle}>{ROLES.map(r => <option key={r} value={r}>{r || 'Select your role...'}</option>)}</select></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-base font-medium mb-2" style={{ color: BRAND.white }}>Industry</label><select value={userInfo.industry} onChange={e => setUserInfo({...userInfo, industry: e.target.value})} className="w-full px-4 py-3 text-lg focus:outline-none" style={inputStyle}>{INDUSTRIES.map(i => <option key={i} value={i}>{i || 'Select...'}</option>)}</select></div><div><label className="block text-base font-medium mb-2" style={{ color: BRAND.white }}>Country</label><select value={userInfo.country} onChange={e => setUserInfo({...userInfo, country: e.target.value})} className="w-full px-4 py-3 text-lg focus:outline-none" style={inputStyle}>{COUNTRIES.map(c => <option key={c} value={c}>{c || 'Select...'}</option>)}</select></div></div><div className="grid grid-cols-2 gap-4"><div><label className="block text-base font-medium mb-2" style={{ color: BRAND.white }}>Department</label><select value={userInfo.department} onChange={e => setUserInfo({...userInfo, department: e.target.value})} className="w-full px-4 py-3 text-lg focus:outline-none" style={inputStyle}>{DEPARTMENTS.map(d => <option key={d} value={d}>{d || 'Select...'}</option>)}</select></div><div><label className="block text-base font-medium mb-2" style={{ color: BRAND.white }}>Employees</label><select value={userInfo.employeeCount} onChange={e => setUserInfo({...userInfo, employeeCount: e.target.value})} className="w-full px-4 py-3 text-lg focus:outline-none" style={inputStyle}>{EMPLOYEE_COUNTS.map(e => <option key={e} value={e}>{e || 'Select...'}</option>)}</select></div></div><div><label className="block text-base font-medium mb-2" style={{ color: BRAND.white }}>Email (optional)</label><input type="email" value={userInfo.assessorEmail} onChange={e => setUserInfo({...userInfo, assessorEmail: e.target.value})} className="w-full px-4 py-3 text-lg focus:outline-none" style={inputStyle} placeholder="your.email@company.com" /></div>
+      {/* Privacy Policy - CRITICAL */}
+      <div className="mt-6 p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(0,229,229,0.05)', border: '1px solid rgba(0,229,229,0.2)' }}>
+        <p className="text-sm" style={{ color: BRAND.gray }}>
+          By continuing, you agree to our{' '}
+          <a 
+            href="https://www.difc.com/our-policies" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="font-medium underline hover:no-underline"
+            style={{ color: BRAND.cyan }}
+          >
+            Privacy Policy
+          </a>
+        </p>
+      </div>
+      <button onClick={() => setCurrentView('assessment')} disabled={!userInfo.organizationName || !userInfo.role || (assessmentType === 'individual' && !userInfo.assessorName)} className="w-full py-4 rounded-xl text-xl transition-all disabled:opacity-40 mt-6" style={btnPrimary}>Start Assessment →</button></div></div></div></div>
+  );
+
+  if (currentView === 'assessment') {
+    const question = questions[currentQuestionIndex];
+    const progress = ((currentQuestionIndex + 1) / questions.length) * 100;
+    const currentAnswer = answers[currentQuestionIndex];
+    return (
+      <div style={pageStyle}><div ref={topRef} className="sticky top-0 z-20 py-4" style={{ backgroundColor: BRAND.deepNavy + 'F5', backdropFilter: 'blur(10px)', borderBottom: '1px solid rgba(0,229,229,0.15)' }}><div className="max-w-4xl mx-auto px-6"><div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-3"><div className="flex items-center gap-2"><Logo size="small" /><AlphaBadge /></div><div className="flex items-center gap-3 px-4 py-2 rounded-full" style={{ background: 'rgba(0,229,229,0.05)', border: '1px solid rgba(0,229,229,0.2)' }}><div className="w-24 sm:w-48 h-2 rounded-full overflow-hidden" style={{ backgroundColor: 'rgba(255,255,255,0.1)' }}><div className="h-full rounded-full transition-all" style={{ width: `${progress}%`, background: `linear-gradient(90deg, ${BRAND.cyan}, ${BRAND.cyanGlow})` }} /></div><span className="text-sm sm:text-base font-semibold whitespace-nowrap" style={{ color: BRAND.white }}>{currentQuestionIndex + 1}/{questions.length}</span></div></div></div></div><div className="max-w-4xl mx-auto px-6 py-10"><div className="p-8" style={cardStyle}><div className="flex items-center gap-4 mb-6 pb-4" style={{ borderBottom: '1px solid rgba(0,229,229,0.15)' }}><div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-bold" style={{ background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`, color: BRAND.black }}>{currentQuestionIndex + 1}</div><div><div className="text-sm font-semibold uppercase tracking-wider mb-1" style={{ color: BRAND.cyan }}>{question.domain}</div><div className="text-sm" style={{ color: BRAND.gray }}>{question.domainDesc}</div></div></div><h2 className="text-2xl font-semibold mb-8" style={{ color: BRAND.white, lineHeight: 1.5 }}>{question.question}</h2><div className="space-y-3">{question.options.map((option, idx) => (<button key={idx} onClick={() => handleAnswer(idx)} className="w-full flex items-start gap-4 p-5 rounded-xl text-left transition-all" style={{ backgroundColor: currentAnswer === idx ? 'rgba(0,229,229,0.1)' : 'rgba(255,255,255,0.03)', border: `2px solid ${currentAnswer === idx ? BRAND.cyan : 'transparent'}` }}><div className="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center mt-1" style={{ border: `2px solid ${currentAnswer === idx ? BRAND.cyan : BRAND.gray}`, backgroundColor: currentAnswer === idx ? BRAND.cyan : 'transparent' }}>{currentAnswer === idx && <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: BRAND.black }} />}</div><div><div className="flex items-center gap-3 mb-1"><span className="text-lg font-bold px-3 py-1 rounded-lg" style={{ backgroundColor: currentAnswer === idx ? BRAND.cyan : 'rgba(0,229,229,0.2)', color: currentAnswer === idx ? BRAND.black : BRAND.cyan }}>{option.score}</span><span className="text-lg font-semibold" style={{ color: BRAND.white }}>{option.title}</span></div><div className="text-base" style={{ color: BRAND.gray }}>{option.desc}</div></div></button>))}</div></div><div className="flex items-center justify-between mt-8"><button onClick={() => currentQuestionIndex > 0 && setCurrentQuestionIndex(currentQuestionIndex - 1)} disabled={currentQuestionIndex === 0} className="px-6 py-3 rounded-xl text-lg font-medium disabled:opacity-30" style={{ color: BRAND.gray }}>← Previous</button>{currentQuestionIndex === questions.length - 1 ? (<button onClick={completeAssessment} disabled={Object.keys(answers).length < questions.length} className="px-8 py-4 rounded-xl text-xl font-bold disabled:opacity-40" style={btnPrimary}>View Results →</button>) : (<button onClick={() => setCurrentQuestionIndex(currentQuestionIndex + 1)} disabled={currentAnswer === undefined} className="px-8 py-4 rounded-xl text-xl font-bold disabled:opacity-40" style={btnPrimary}>Next →</button>)}</div></div></div>
+    );
+  }
+
+  if (currentView === 'results' && results) return (
+    <div style={pageStyle} className="relative"><WaveBackground /><div className="relative z-10 max-w-5xl mx-auto px-6 py-12"><div className="flex items-center justify-between mb-10"><button onClick={() => setCurrentView('home')} className="text-lg" style={{ color: BRAND.gray }}>← New Assessment</button><div className="flex flex-wrap items-center gap-2 sm:gap-4"><button onClick={exportToPDF} disabled={isExporting} className="px-5 py-2.5 rounded-xl text-base font-medium flex items-center gap-2" style={btnSecondary}>{isExporting ? <><div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: `${BRAND.cyan} transparent ${BRAND.cyan} ${BRAND.cyan}` }} />Exporting...</> : <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export PDF</>}</button><button onClick={exportToEmail} className="px-5 py-2.5 rounded-xl text-base font-medium flex items-center gap-2" style={btnSecondary}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email Report</button><Logo size="small" /></div></div><div className="p-10 mb-10" style={{ ...cardStyle, boxShadow: '0 0 60px rgba(0,229,229,0.15)' }}><div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8"><div><div className="flex items-center gap-3 mb-4"><AlphaBadge /><span className="text-base font-medium" style={{ color: BRAND.gray }}>{assessmentType === 'individual' ? 'Individual AI Literacy' : 'Organizational AI Readiness'}</span></div><h1 className="text-4xl font-bold mb-2" style={{ color: BRAND.white }}>{assessmentType === 'individual' ? userInfo.assessorName : userInfo.organizationName}</h1><p className="text-lg" style={{ color: BRAND.gray }}>{userInfo.role} {userInfo.industry && `· ${userInfo.industry}`}</p></div><div className="text-center md:text-right"><div className="text-7xl font-bold" style={{ color: results.maturityLevel.color }}>{results.percentageScore}%</div><div className="text-lg" style={{ color: BRAND.gray }}>Overall Score</div></div></div><div className="mt-8 p-5 rounded-xl" style={{ backgroundColor: results.maturityLevel.color + '15', border: `2px solid ${results.maturityLevel.color}` }}><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-5 h-5 rounded" style={{ backgroundColor: results.maturityLevel.color }} /><span className="text-2xl font-bold" style={{ color: BRAND.white }}>{results.maturityLevel.level}</span></div><span className="text-lg" style={{ color: results.maturityLevel.color }}>{results.maturityLevel.desc}</span></div></div></div><div className="p-8 mb-10" style={cardStyle}><h2 className="text-2xl font-bold mb-8" style={{ color: BRAND.white }}>Domain Scores</h2><div className="space-y-5">{Object.entries(results.domainScores).map(([domain, data]) => { const color = data.percentage >= 80 ? BRAND.cyan : data.percentage >= 60 ? BRAND.cyanDark : data.percentage >= 40 ? '#FB8C00' : '#E53935'; return (<div key={domain}><div className="flex items-center justify-between mb-2"><span className="text-lg font-medium" style={{ color: BRAND.white }}>{domain}</span><span className="text-xl font-bold" style={{ color }}>{data.percentage}%</span></div><div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: BRAND.grayDark }}><div className="h-full rounded-full" style={{ width: `${data.percentage}%`, backgroundColor: color }} /></div></div>); })}</div></div>
+    {/* About ATLAS - Professional Style */}
+    <div className="p-8 mb-8" style={{ 
+      ...cardStyle,
+      background: `linear-gradient(135deg, rgba(0,229,229,0.1), ${BRAND.black})`,
+      border: `2px solid ${BRAND.cyan}`
+    }}>
+      <div className="text-center mb-4">
+        <h2 className="text-2xl font-bold" style={{ color: BRAND.cyan }}>
+          ATLAS Platform
+        </h2>
+        <p className="text-sm mt-1" style={{ color: BRAND.gray }}>
+          AI Transformation & Leadership Acceleration System
+        </p>
+      </div>
+      <p className="text-base leading-relaxed" style={{ color: BRAND.white }}>
+        <strong style={{color:BRAND.cyan}}>ATLAS</strong> (AI Transformation & Leadership Acceleration System) is Dubai AI Campus's 
+        unified platform for enterprise AI transformation. Built on three progressive tiers—<strong style={{color:BRAND.cyan}}>MOBILIZE</strong>, 
+        <strong style={{color:BRAND.cyan}}>DEPLOY</strong>, and <strong style={{color:BRAND.cyan}}>SCALE</strong>—ATLAS delivers 
+        modular components designed to accelerate your organization's AI journey. Whether you need strategic clarity, 
+        production-ready systems, or enterprise-wide capability building, ATLAS provides the framework, expertise, 
+        and governance infrastructure to transform AI potential into measurable business value.
+      </p>
+    </div>
+
+    {/* Your Recommended ATLAS Path */}
+    {atlasRecommendation && (
+      <div className="p-8 mb-8" style={{...cardStyle, border: `2px solid ${BRAND.cyan}`}}>
+        <h2 className="text-2xl font-bold mb-6" style={{ color: BRAND.cyan }}>
+          Your Recommended Path
+        </h2>
+        
+        {/* Tier Badge */}
+        <div className="mb-6">
+          <div className="inline-block px-6 py-3 rounded-lg mb-3" style={{ 
+            background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`,
+            color: BRAND.black
+          }}>
+            <span className="text-xl font-bold">ATLAS {atlasRecommendation.tier}</span>
+          </div>
+          <div className="text-base mb-2" style={{ color: BRAND.gray }}>
+            {atlasRecommendation.tierDescription}
+          </div>
+          <p className="text-base mb-2" style={{ color: BRAND.white }}>
+            {atlasRecommendation.coreFocus}
+          </p>
+          <p className="text-sm" style={{ color: BRAND.gray }}>
+            Typical Duration: {atlasRecommendation.typicalDuration}
+          </p>
+        </div>
+        
+        {/* Modules */}
+        <h3 className="text-lg font-semibold mb-4" style={{ color: BRAND.white }}>
+          Recommended Starting Modules
+        </h3>
+        <div className="space-y-3 mb-6">
+          {atlasRecommendation.modules.map((module, idx) => (
+            <div key={idx} className="p-4 rounded-lg" style={{ 
+              backgroundColor: BRAND.deepNavy,
+              border: `1px solid rgba(0,229,229,0.3)`
+            }}>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold" style={{ 
+                  backgroundColor: BRAND.cyan,
+                  color: BRAND.black
+                }}>
+                  {idx + 1}
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-base mb-1" style={{ color: BRAND.white }}>
+                    {module.name}
+                  </div>
+                  <p className="text-sm" style={{ color: BRAND.gray }}>
+                    {module.rationale}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* CTA */}
+        <div className="text-center p-6 rounded-lg" style={{ 
+          background: `linear-gradient(135deg, rgba(0,229,229,0.1), ${BRAND.black})`,
+          border: `1px solid ${BRAND.cyan}`
+        }}>
+          <p className="text-base mb-4" style={{ color: BRAND.white }}>
+            {atlasRecommendation.nextStep}
+          </p>
+          <button 
+            onClick={() => window.open('https://dubai-ai-campus.ae/contact', '_blank')}
+            className="px-8 py-3 rounded-lg font-bold text-base"
+            style={{
+              background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`,
+              color: BRAND.black,
+              boxShadow: `0 4px 12px rgba(0, 229, 229, 0.3)`,
+              cursor: 'pointer'
+            }}
+          >
+            Schedule Consultation →
+          </button>
+        </div>
+      </div>
+    )}
+{isAnalyzing ? (<div className="p-16 text-center" style={cardStyle}><div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: BRAND.cyan + '20' }}><div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: `${BRAND.cyan} transparent ${BRAND.cyan} ${BRAND.cyan}` }} /></div><h3 className="text-2xl font-bold mb-3" style={{ color: BRAND.white }}>Generating Personalized Insights</h3><p className="text-lg" style={{ color: BRAND.gray }}>Analyzing your results based on your role and industry...</p></div>) : aiAnalysis && (<><div className="p-8 mb-10" style={{ backgroundColor: 'rgba(0,229,229,0.08)', border: '1px solid rgba(0,229,229,0.3)', borderRadius: '16px' }}><h2 className="text-2xl font-bold mb-4" style={{ color: BRAND.white }}>Executive Summary</h2><p className="text-xl leading-relaxed" style={{ color: BRAND.grayLight }}>{aiAnalysis.executiveSummary}</p>{aiAnalysis.roleAlignment && <p className="text-lg mt-4" style={{ color: BRAND.cyan }}>{aiAnalysis.roleAlignment}</p>}{aiAnalysis.industryContext && <p className="text-lg mt-4 italic" style={{ color: BRAND.gray }}>{aiAnalysis.industryContext}</p>}</div><div className="grid md:grid-cols-2 gap-8 mb-10"><div className="p-8" style={{ backgroundColor: 'rgba(0,229,229,0.08)', border: '1px solid rgba(0,229,229,0.3)', borderRadius: '16px' }}><h3 className="text-xl font-bold mb-6" style={{ color: BRAND.cyan }}>Key Strengths</h3><div className="space-y-4">{(aiAnalysis.keyStrengths || []).map((s, i) => (<div key={i} className="pl-4" style={{ borderLeft: `3px solid ${BRAND.cyan}` }}><div className="text-lg font-semibold" style={{ color: BRAND.white }}>{s.area}</div><div className="text-base mt-1" style={{ color: BRAND.gray }}>{s.insight}</div></div>))}</div></div><div className="p-8" style={{ backgroundColor: 'rgba(251,140,0,0.08)', border: '1px solid rgba(251,140,0,0.3)', borderRadius: '16px' }}><h3 className="text-xl font-bold mb-6" style={{ color: '#FB8C00' }}>{assessmentType === 'individual' ? 'Development Areas' : 'Critical Gaps'}</h3><div className="space-y-4">{(aiAnalysis.developmentAreas || aiAnalysis.criticalGaps || []).map((g, i) => (<div key={i} className="pl-4" style={{ borderLeft: '3px solid #FB8C00' }}><div className="flex items-center gap-2"><span className="text-lg font-semibold" style={{ color: BRAND.white }}>{g.area}</span><span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: g.priority === 'HIGH' ? '#E53935' : g.priority === 'MEDIUM' ? '#FB8C00' : BRAND.cyanDark, color: BRAND.white }}>{g.priority}</span></div><div className="text-base mt-1" style={{ color: BRAND.gray }}>{g.insight}</div></div>))}</div></div></div><div className="p-8 mb-10" style={cardStyle}><h2 className="text-2xl font-bold mb-8" style={{ color: BRAND.white }}>{assessmentType === 'individual' ? 'Skills to Develop' : 'Capabilities to Build'}</h2><div className="grid md:grid-cols-2 gap-4">{(aiAnalysis.skillsToDevelope || aiAnalysis.capabilitiesToBuild || []).map((s, i) => (<div key={i} className="p-5 rounded-xl" style={{ backgroundColor: BRAND.deepNavy, borderLeft: `3px solid ${BRAND.cyan}` }}><div className="text-lg font-semibold mb-2" style={{ color: BRAND.cyan }}>{s.skill || s.capability}</div><div className="text-base mb-3" style={{ color: BRAND.gray }}>{s.description}</div><span className="text-sm px-3 py-1 rounded-full" style={{ backgroundColor: BRAND.cyan + '20', color: BRAND.cyan }}>{s.trainingType || s.trainingFocus}</span></div>))}</div></div><div className="p-8" style={{ background: `linear-gradient(135deg, rgba(0,229,229,0.1) 0%, ${BRAND.navy} 100%)`, border: '1px solid rgba(0,229,229,0.3)', borderRadius: '16px' }}><h2 className="text-2xl font-bold mb-6" style={{ color: BRAND.white }}>Recommended Next Steps</h2><div className="space-y-4">{(aiAnalysis.recommendedNextSteps || aiAnalysis.investmentPriorities || []).map((step, i) => (<div key={i} className="flex items-start gap-4"><div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold" style={{ backgroundColor: BRAND.cyan, color: BRAND.black }}>{i + 1}</div><div className="text-lg pt-2" style={{ color: BRAND.grayLight }}>{typeof step === 'string' ? step : step.recommendation}{step.timeframe && <span className="ml-2 text-sm" style={{ color: BRAND.cyan }}>({step.timeframe})</span>}</div></div>))}</div>{aiAnalysis.careerTip && <div className="mt-8 p-4 rounded-xl" style={{ backgroundColor: BRAND.cyan + '10' }}><span className="text-base" style={{ color: BRAND.cyan }}>💡 {aiAnalysis.careerTip}</span></div>}</div></>)}<div className="text-center mt-16 text-base" style={{ color: BRAND.gray }}>ARQ™ Alpha Assessment · DUBAI AI CAMPUS · DIFC Innovation Hub</div></div></div>
+  );
+
+  return null;
+}
