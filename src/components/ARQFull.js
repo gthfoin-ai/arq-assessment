@@ -1,9 +1,6 @@
-// ⚡ ATLAS INTEGRATION v3.0.0 - Dubai AI Campus
-// This file has been modified to include ATLAS recommendations
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { generateATLASRecommendation } from '../lib/atlas-utils';
-
 
 // Dubai AI Campus Brand Colors
 const BRAND = {
@@ -287,9 +284,7 @@ export default function ARQFull() {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
-  // ⚡ ATLAS: Store recommendation data for display
   const [atlasRecommendation, setAtlasRecommendation] = useState(null);
-
   
   // Refs for auto-scrolling
   const questionRefs = useRef({});
@@ -823,7 +818,23 @@ Visit: https://arq-assessment.vercel.app/full
               <input type="email" value={assessmentData.assessorEmail} onChange={e => setAssessmentData({ ...assessmentData, assessorEmail: e.target.value })} className="w-full rounded-xl px-5 py-4 text-lg focus:outline-none" style={inputStyle} placeholder="Enter your email" />
             </div>
             
-            <button onClick={() => assessmentData.organizationName && assessmentData.assessorName && setCurrentView('assessment')} disabled={!assessmentData.organizationName || !assessmentData.assessorName} className="w-full font-bold py-5 rounded-xl text-xl transition-all disabled:opacity-40 mt-8" style={btnPrimary}>
+            
+      {/* Privacy Policy - CRITICAL */}
+      <div className="mt-6 p-4 rounded-lg text-center" style={{ backgroundColor: 'rgba(0,229,229,0.05)', border: '1px solid rgba(0,229,229,0.2)' }}>
+        <p className="text-sm" style={{ color: BRAND.gray }}>
+          By continuing, you agree to our{' '}
+          <a 
+            href="https://www.difc.com/our-policies" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="font-medium underline hover:no-underline"
+            style={{ color: BRAND.cyan }}
+          >
+            Privacy Policy
+          </a>
+        </p>
+      </div>
+      <button onClick={() => assessmentData.organizationName && assessmentData.assessorName && setCurrentView('assessment')} disabled={!assessmentData.organizationName || !assessmentData.assessorName} className="w-full font-bold py-5 rounded-xl text-xl transition-all disabled:opacity-40 mt-8" style={btnPrimary}>
               Begin Assessment →
             </button>
           </div>
@@ -1080,111 +1091,110 @@ Visit: https://arq-assessment.vercel.app/full
           </div>
 
           {/* AI Analysis */}
-          {/* ⚡ ATLAS v3.0: About Section */}
-<div className="p-8 mb-8" style={{ 
-  ...cardStyle, 
-  background: `linear-gradient(135deg, ${BRAND.cyan}20, ${BRAND.black})`,
-  border: `3px solid ${BRAND.cyan}`
-}}>
-  <div style={{textAlign:'center',marginBottom:'20px'}}>
-    <h2 className="text-3xl font-bold" style={{ color: BRAND.cyan }}>
-      ⚡ ATLAS Platform
-    </h2>
-    <p className="text-sm" style={{color:BRAND.gray}}>AI Transformation & Leadership Acceleration System</p>
-  </div>
-  <p className="text-lg leading-relaxed" style={{ color: BRAND.white }}>
-    <strong style={{color:BRAND.cyan}}>ATLAS</strong> (AI Transformation & Leadership Acceleration System) is Dubai AI Campus's 
-    unified platform for enterprise AI transformation. Built on three progressive tiers—<strong style={{color:BRAND.cyan}}>MOBILIZE</strong>, 
-    <strong style={{color:BRAND.cyan}}>DEPLOY</strong>, and <strong style={{color:BRAND.cyan}}>SCALE</strong>—ATLAS delivers 
-    modular components designed to accelerate your organization's AI journey. Whether you need strategic clarity, 
-    production-ready systems, or enterprise-wide capability building, ATLAS provides the framework, expertise, 
-    and governance infrastructure to transform AI potential into measurable business value.
-  </p>
-</div>
-{/* ⚡ ATLAS v3.0: Recommendation */}
-{atlasRecommendation && (
-  <div className="p-8 mb-8" style={{...cardStyle,border:`3px solid ${BRAND.cyan}`}}>
-    <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: BRAND.cyan }}>
-      🎯 Your Recommended Path
-    </h2>
-    <div className="text-center mb-6">
-      <div className="inline-block px-8 py-4 rounded-xl" style={{ 
-        background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`,
-        color: BRAND.black,
-        fontSize:'28px',
-        fontWeight:'bold'
-      }}>
-        ATLAS {atlasRecommendation.tier}
-      </div>
-      <div className="text-xl mt-3" style={{ color: BRAND.gray }}>
-        {atlasRecommendation.tierDescription}
-      </div>
-      <p className="text-lg mt-2" style={{ color: BRAND.white }}>
-        {atlasRecommendation.coreFocus}
-      </p>
-      <p className="text-base mt-2" style={{ color: BRAND.gray }}>
-        Duration: {atlasRecommendation.typicalDuration}
-      </p>
-    </div>
-    <h3 className="text-xl font-bold mb-4" style={{ color: BRAND.white }}>
-      📋 Recommended Modules
-    </h3>
-    <div className="space-y-3 mb-6">
-      {atlasRecommendation.modules.map((mod, idx) => (
-        <div key={idx} className="p-4 rounded-lg" style={{ 
-          backgroundColor: BRAND.black,
-          border: `2px solid ${BRAND.cyan}40`
-        }}>
-          <div className="flex items-start gap-3">
-            <div style={{ 
-              width:'35px',
-              height:'35px',
-              borderRadius:'50%',
-              backgroundColor:BRAND.cyan,
-              color:BRAND.black,
-              display:'flex',
-              alignItems:'center',
-              justifyContent:'center',
-              fontWeight:'bold',
-              fontSize:'18px'
-            }}>
-              {idx + 1}
-            </div>
-            <div style={{flex:1}}>
-              <div className="font-bold text-lg" style={{ color: BRAND.white }}>
-                {mod.name}
-              </div>
-              <p style={{ color: BRAND.gray }}>
-                {mod.rationale}
-              </p>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-    <div className="text-center p-6 rounded-xl" style={{ 
-      background: `linear-gradient(135deg, ${BRAND.cyan}15, ${BRAND.black})`,
+          
+    {/* About ATLAS - Professional Style */}
+    <div className="p-8 mb-8" style={{ 
+      ...cardStyle,
+      background: `linear-gradient(135deg, rgba(0,229,229,0.1), ${BRAND.black})`,
       border: `2px solid ${BRAND.cyan}`
     }}>
-      <p className="text-lg mb-4 font-medium" style={{ color: BRAND.white }}>
-        {atlasRecommendation.nextStep}
+      <div className="text-center mb-4">
+        <h2 className="text-2xl font-bold" style={{ color: BRAND.cyan }}>
+          ATLAS Platform
+        </h2>
+        <p className="text-sm mt-1" style={{ color: BRAND.gray }}>
+          AI Transformation & Leadership Acceleration System
+        </p>
+      </div>
+      <p className="text-base leading-relaxed" style={{ color: BRAND.white }}>
+        <strong style={{color:BRAND.cyan}}>ATLAS</strong> (AI Transformation & Leadership Acceleration System) is Dubai AI Campus's 
+        unified platform for enterprise AI transformation. Built on three progressive tiers—<strong style={{color:BRAND.cyan}}>MOBILIZE</strong>, 
+        <strong style={{color:BRAND.cyan}}>DEPLOY</strong>, and <strong style={{color:BRAND.cyan}}>SCALE</strong>—ATLAS delivers 
+        modular components designed to accelerate your organization's AI journey. Whether you need strategic clarity, 
+        production-ready systems, or enterprise-wide capability building, ATLAS provides the framework, expertise, 
+        and governance infrastructure to transform AI potential into measurable business value.
       </p>
-      <button 
-        onClick={() => window.open('https://dubai-ai-campus.ae/contact', '_blank')}
-        className="px-10 py-4 rounded-xl text-lg font-bold"
-        style={{
-          background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`,
-          color: BRAND.black,
-          boxShadow: `0 6px 20px rgba(0, 229, 229, 0.4)`,
-          cursor: 'pointer',
-          fontSize:'18px'
-        }}
-      >
-        📞 Schedule Consultation →
-      </button>
     </div>
-  </div>
-)}
+
+    {/* Your Recommended ATLAS Path */}
+    {atlasRecommendation && (
+      <div className="p-8 mb-8" style={{...cardStyle, border: `2px solid ${BRAND.cyan}`}}>
+        <h2 className="text-2xl font-bold mb-6" style={{ color: BRAND.cyan }}>
+          Your Recommended Path
+        </h2>
+        
+        {/* Tier Badge */}
+        <div className="mb-6">
+          <div className="inline-block px-6 py-3 rounded-lg mb-3" style={{ 
+            background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`,
+            color: BRAND.black
+          }}>
+            <span className="text-xl font-bold">ATLAS {atlasRecommendation.tier}</span>
+          </div>
+          <div className="text-base mb-2" style={{ color: BRAND.gray }}>
+            {atlasRecommendation.tierDescription}
+          </div>
+          <p className="text-base mb-2" style={{ color: BRAND.white }}>
+            {atlasRecommendation.coreFocus}
+          </p>
+          <p className="text-sm" style={{ color: BRAND.gray }}>
+            Typical Duration: {atlasRecommendation.typicalDuration}
+          </p>
+        </div>
+        
+        {/* Modules */}
+        <h3 className="text-lg font-semibold mb-4" style={{ color: BRAND.white }}>
+          Recommended Starting Modules
+        </h3>
+        <div className="space-y-3 mb-6">
+          {atlasRecommendation.modules.map((module, idx) => (
+            <div key={idx} className="p-4 rounded-lg" style={{ 
+              backgroundColor: BRAND.deepNavy,
+              border: `1px solid rgba(0,229,229,0.3)`
+            }}>
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center font-bold" style={{ 
+                  backgroundColor: BRAND.cyan,
+                  color: BRAND.black
+                }}>
+                  {idx + 1}
+                </div>
+                <div className="flex-1">
+                  <div className="font-semibold text-base mb-1" style={{ color: BRAND.white }}>
+                    {module.name}
+                  </div>
+                  <p className="text-sm" style={{ color: BRAND.gray }}>
+                    {module.rationale}
+                  </p>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        
+        {/* CTA */}
+        <div className="text-center p-6 rounded-lg" style={{ 
+          background: `linear-gradient(135deg, rgba(0,229,229,0.1), ${BRAND.black})`,
+          border: `1px solid ${BRAND.cyan}`
+        }}>
+          <p className="text-base mb-4" style={{ color: BRAND.white }}>
+            {atlasRecommendation.nextStep}
+          </p>
+          <button 
+            onClick={() => window.open('https://dubai-ai-campus.ae/contact', '_blank')}
+            className="px-8 py-3 rounded-lg font-bold text-base"
+            style={{
+              background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`,
+              color: BRAND.black,
+              boxShadow: `0 4px 12px rgba(0, 229, 229, 0.3)`,
+              cursor: 'pointer'
+            }}
+          >
+            Schedule Consultation →
+          </button>
+        </div>
+      </div>
+    )}
 {isAnalyzing ? (
             <div className="rounded-2xl p-16 text-center" style={cardStyle}>
               <div className="animate-pulse">
