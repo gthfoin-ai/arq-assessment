@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import { generateATLASRecommendation } from '../lib/atlas-utils';
 
 // Dubai AI Campus Brand Colors
 const BRAND = {
@@ -283,6 +284,7 @@ export default function ARQFull() {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [atlasRecommendation, setAtlasRecommendation] = useState(null);
   
   // Refs for auto-scrolling
   const questionRefs = useRef({});

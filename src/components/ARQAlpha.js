@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
+import { generateATLASRecommendation } from '../lib/atlas-utils';
 
 const BRAND = { black: '#000000', cyan: '#00E5E5', cyanDark: '#00B8B8', cyanLight: '#4DFAFA', cyanGlow: '#00FFE5', white: '#FFFFFF', gray: '#888888', grayLight: '#CCCCCC', grayDark: '#333333', navy: '#0E1825', deepNavy: '#0A0F1A' };
 
@@ -126,6 +127,7 @@ export default function ARQAlphaApp() {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  const [atlasRecommendation, setAtlasRecommendation] = useState(null);
   const topRef = useRef(null);
 
   const questions = assessmentType === 'individual' ? INDIVIDUAL_QUESTIONS : ORGANIZATIONAL_QUESTIONS;
