@@ -1,6 +1,9 @@
+// ⚡ ATLAS INTEGRATION v3.0.0 - Dubai AI Campus
+// This file has been modified to include ATLAS recommendations
 "use client";
 import React, { useState, useEffect, useRef } from 'react';
 import { generateATLASRecommendation } from '../lib/atlas-utils';
+
 
 const BRAND = { black: '#000000', cyan: '#00E5E5', cyanDark: '#00B8B8', cyanLight: '#4DFAFA', cyanGlow: '#00FFE5', white: '#FFFFFF', gray: '#888888', grayLight: '#CCCCCC', grayDark: '#333333', navy: '#0E1825', deepNavy: '#0A0F1A' };
 
@@ -127,7 +130,9 @@ export default function ARQAlphaApp() {
   const [aiAnalysis, setAiAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isExporting, setIsExporting] = useState(false);
+  // ⚡ ATLAS: Store recommendation data for display
   const [atlasRecommendation, setAtlasRecommendation] = useState(null);
+
   const topRef = useRef(null);
 
   const questions = assessmentType === 'individual' ? INDIVIDUAL_QUESTIONS : ORGANIZATIONAL_QUESTIONS;
@@ -277,7 +282,112 @@ Visit: https://arq-assessment.vercel.app
   }
 
   if (currentView === 'results' && results) return (
-    <div style={pageStyle} className="relative"><WaveBackground /><div className="relative z-10 max-w-5xl mx-auto px-6 py-12"><div className="flex items-center justify-between mb-10"><button onClick={() => setCurrentView('home')} className="text-lg" style={{ color: BRAND.gray }}>← New Assessment</button><div className="flex flex-wrap items-center gap-2 sm:gap-4"><button onClick={exportToPDF} disabled={isExporting} className="px-5 py-2.5 rounded-xl text-base font-medium flex items-center gap-2" style={btnSecondary}>{isExporting ? <><div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: `${BRAND.cyan} transparent ${BRAND.cyan} ${BRAND.cyan}` }} />Exporting...</> : <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export PDF</>}</button><button onClick={exportToEmail} className="px-5 py-2.5 rounded-xl text-base font-medium flex items-center gap-2" style={btnSecondary}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email Report</button><Logo size="small" /></div></div><div className="p-10 mb-10" style={{ ...cardStyle, boxShadow: '0 0 60px rgba(0,229,229,0.15)' }}><div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8"><div><div className="flex items-center gap-3 mb-4"><AlphaBadge /><span className="text-base font-medium" style={{ color: BRAND.gray }}>{assessmentType === 'individual' ? 'Individual AI Literacy' : 'Organizational AI Readiness'}</span></div><h1 className="text-4xl font-bold mb-2" style={{ color: BRAND.white }}>{assessmentType === 'individual' ? userInfo.assessorName : userInfo.organizationName}</h1><p className="text-lg" style={{ color: BRAND.gray }}>{userInfo.role} {userInfo.industry && `· ${userInfo.industry}`}</p></div><div className="text-center md:text-right"><div className="text-7xl font-bold" style={{ color: results.maturityLevel.color }}>{results.percentageScore}%</div><div className="text-lg" style={{ color: BRAND.gray }}>Overall Score</div></div></div><div className="mt-8 p-5 rounded-xl" style={{ backgroundColor: results.maturityLevel.color + '15', border: `2px solid ${results.maturityLevel.color}` }}><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-5 h-5 rounded" style={{ backgroundColor: results.maturityLevel.color }} /><span className="text-2xl font-bold" style={{ color: BRAND.white }}>{results.maturityLevel.level}</span></div><span className="text-lg" style={{ color: results.maturityLevel.color }}>{results.maturityLevel.desc}</span></div></div></div><div className="p-8 mb-10" style={cardStyle}><h2 className="text-2xl font-bold mb-8" style={{ color: BRAND.white }}>Domain Scores</h2><div className="space-y-5">{Object.entries(results.domainScores).map(([domain, data]) => { const color = data.percentage >= 80 ? BRAND.cyan : data.percentage >= 60 ? BRAND.cyanDark : data.percentage >= 40 ? '#FB8C00' : '#E53935'; return (<div key={domain}><div className="flex items-center justify-between mb-2"><span className="text-lg font-medium" style={{ color: BRAND.white }}>{domain}</span><span className="text-xl font-bold" style={{ color }}>{data.percentage}%</span></div><div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: BRAND.grayDark }}><div className="h-full rounded-full" style={{ width: `${data.percentage}%`, backgroundColor: color }} /></div></div>); })}</div></div>{/* About ATLAS */}<div className="p-6 mb-6" style={{ ...cardStyle, background: `linear-gradient(135deg, ${BRAND.cyan}15, ${BRAND.black})` }}><h3 className="text-xl font-bold mb-3" style={{ color: BRAND.cyan }}>About ATLAS</h3><p className="text-base leading-relaxed" style={{ color: BRAND.white }}><strong>ATLAS</strong> (AI Transformation & Leadership Acceleration System) is Dubai AI Campus's unified platform for enterprise AI transformation. Built on three progressive tiers—<strong>MOBILIZE</strong>, <strong>DEPLOY</strong>, and <strong>SCALE</strong>—ATLAS delivers modular components designed to accelerate your organization's AI journey. Whether you need strategic clarity, production-ready systems, or enterprise-wide capability building, ATLAS provides the framework, expertise, and governance infrastructure to transform AI potential into measurable business value.</p></div>{/* ATLAS Recommendation */}{atlasRecommendation && (<div className="p-8 mb-8" style={cardStyle}><h2 className="text-2xl font-bold mb-4" style={{ color: BRAND.cyan }}>Your Recommended Path</h2><div className="mb-6"><div className="inline-block px-6 py-3 rounded-xl mb-3" style={{ background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`, color: BRAND.black }}><span className="text-2xl font-bold">ATLAS {atlasRecommendation.tier}</span></div><div className="text-lg mb-2" style={{ color: BRAND.gray }}>{atlasRecommendation.tierDescription}</div><p className="text-base leading-relaxed mb-1" style={{ color: BRAND.white }}>{atlasRecommendation.coreFocus}</p><p className="text-sm" style={{ color: BRAND.gray }}>Typical engagement: {atlasRecommendation.typicalDuration}</p></div><h3 className="text-lg font-semibold mb-4" style={{ color: BRAND.white }}>Recommended Starting Modules</h3><div className="grid gap-3 mb-6">{atlasRecommendation.modules.map((module, idx) => (<div key={idx} className="rounded-lg p-4" style={{ backgroundColor: BRAND.black, border: `1px solid ${BRAND.gray}30` }}><div className="flex items-start gap-3"><div className="w-7 h-7 rounded-full flex items-center justify-center font-bold text-sm flex-shrink-0" style={{ backgroundColor: BRAND.cyan, color: BRAND.black }}>{idx + 1}</div><div className="flex-1"><div className="font-semibold text-base mb-1" style={{ color: BRAND.white }}>{module.name}</div><p className="text-sm" style={{ color: BRAND.gray }}>{module.rationale}</p></div></div></div>))}</div><div className="rounded-xl p-5 text-center" style={{ background: `linear-gradient(135deg, ${BRAND.cyan}10, ${BRAND.black})`, border: `1px solid ${BRAND.cyan}40` }}><p className="text-base mb-3" style={{ color: BRAND.white }}>{atlasRecommendation.nextStep}</p><button onClick={() => window.open('https://dubai-ai-campus.ae/contact', '_blank')} className="font-bold px-8 py-3 rounded-xl text-base" style={{ background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`, color: BRAND.black, boxShadow: `0 4px 15px rgba(0, 229, 229, 0.3)`, cursor: 'pointer' }}>Schedule Consultation →</button></div></div>)}{isAnalyzing ? (<div className="p-16 text-center" style={cardStyle}><div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: BRAND.cyan + '20' }}><div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: `${BRAND.cyan} transparent ${BRAND.cyan} ${BRAND.cyan}` }} /></div><h3 className="text-2xl font-bold mb-3" style={{ color: BRAND.white }}>Generating Personalized Insights</h3><p className="text-lg" style={{ color: BRAND.gray }}>Analyzing your results based on your role and industry...</p></div>) : aiAnalysis && (<><div className="p-8 mb-10" style={{ backgroundColor: 'rgba(0,229,229,0.08)', border: '1px solid rgba(0,229,229,0.3)', borderRadius: '16px' }}><h2 className="text-2xl font-bold mb-4" style={{ color: BRAND.white }}>Executive Summary</h2><p className="text-xl leading-relaxed" style={{ color: BRAND.grayLight }}>{aiAnalysis.executiveSummary}</p>{aiAnalysis.roleAlignment && <p className="text-lg mt-4" style={{ color: BRAND.cyan }}>{aiAnalysis.roleAlignment}</p>}{aiAnalysis.industryContext && <p className="text-lg mt-4 italic" style={{ color: BRAND.gray }}>{aiAnalysis.industryContext}</p>}</div><div className="grid md:grid-cols-2 gap-8 mb-10"><div className="p-8" style={{ backgroundColor: 'rgba(0,229,229,0.08)', border: '1px solid rgba(0,229,229,0.3)', borderRadius: '16px' }}><h3 className="text-xl font-bold mb-6" style={{ color: BRAND.cyan }}>Key Strengths</h3><div className="space-y-4">{(aiAnalysis.keyStrengths || []).map((s, i) => (<div key={i} className="pl-4" style={{ borderLeft: `3px solid ${BRAND.cyan}` }}><div className="text-lg font-semibold" style={{ color: BRAND.white }}>{s.area}</div><div className="text-base mt-1" style={{ color: BRAND.gray }}>{s.insight}</div></div>))}</div></div><div className="p-8" style={{ backgroundColor: 'rgba(251,140,0,0.08)', border: '1px solid rgba(251,140,0,0.3)', borderRadius: '16px' }}><h3 className="text-xl font-bold mb-6" style={{ color: '#FB8C00' }}>{assessmentType === 'individual' ? 'Development Areas' : 'Critical Gaps'}</h3><div className="space-y-4">{(aiAnalysis.developmentAreas || aiAnalysis.criticalGaps || []).map((g, i) => (<div key={i} className="pl-4" style={{ borderLeft: '3px solid #FB8C00' }}><div className="flex items-center gap-2"><span className="text-lg font-semibold" style={{ color: BRAND.white }}>{g.area}</span><span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: g.priority === 'HIGH' ? '#E53935' : g.priority === 'MEDIUM' ? '#FB8C00' : BRAND.cyanDark, color: BRAND.white }}>{g.priority}</span></div><div className="text-base mt-1" style={{ color: BRAND.gray }}>{g.insight}</div></div>))}</div></div></div><div className="p-8 mb-10" style={cardStyle}><h2 className="text-2xl font-bold mb-8" style={{ color: BRAND.white }}>{assessmentType === 'individual' ? 'Skills to Develop' : 'Capabilities to Build'}</h2><div className="grid md:grid-cols-2 gap-4">{(aiAnalysis.skillsToDevelope || aiAnalysis.capabilitiesToBuild || []).map((s, i) => (<div key={i} className="p-5 rounded-xl" style={{ backgroundColor: BRAND.deepNavy, borderLeft: `3px solid ${BRAND.cyan}` }}><div className="text-lg font-semibold mb-2" style={{ color: BRAND.cyan }}>{s.skill || s.capability}</div><div className="text-base mb-3" style={{ color: BRAND.gray }}>{s.description}</div><span className="text-sm px-3 py-1 rounded-full" style={{ backgroundColor: BRAND.cyan + '20', color: BRAND.cyan }}>{s.trainingType || s.trainingFocus}</span></div>))}</div></div><div className="p-8" style={{ background: `linear-gradient(135deg, rgba(0,229,229,0.1) 0%, ${BRAND.navy} 100%)`, border: '1px solid rgba(0,229,229,0.3)', borderRadius: '16px' }}><h2 className="text-2xl font-bold mb-6" style={{ color: BRAND.white }}>Recommended Next Steps</h2><div className="space-y-4">{(aiAnalysis.recommendedNextSteps || aiAnalysis.investmentPriorities || []).map((step, i) => (<div key={i} className="flex items-start gap-4"><div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold" style={{ backgroundColor: BRAND.cyan, color: BRAND.black }}>{i + 1}</div><div className="text-lg pt-2" style={{ color: BRAND.grayLight }}>{typeof step === 'string' ? step : step.recommendation}{step.timeframe && <span className="ml-2 text-sm" style={{ color: BRAND.cyan }}>({step.timeframe})</span>}</div></div>))}</div>{aiAnalysis.careerTip && <div className="mt-8 p-4 rounded-xl" style={{ backgroundColor: BRAND.cyan + '10' }}><span className="text-base" style={{ color: BRAND.cyan }}>💡 {aiAnalysis.careerTip}</span></div>}</div></>)}<div className="text-center mt-16 text-base" style={{ color: BRAND.gray }}>ARQ™ Alpha Assessment · DUBAI AI CAMPUS · DIFC Innovation Hub</div></div></div>
+    <div style={pageStyle} className="relative"><WaveBackground /><div className="relative z-10 max-w-5xl mx-auto px-6 py-12"><div className="flex items-center justify-between mb-10"><button onClick={() => setCurrentView('home')} className="text-lg" style={{ color: BRAND.gray }}>← New Assessment</button><div className="flex flex-wrap items-center gap-2 sm:gap-4"><button onClick={exportToPDF} disabled={isExporting} className="px-5 py-2.5 rounded-xl text-base font-medium flex items-center gap-2" style={btnSecondary}>{isExporting ? <><div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: `${BRAND.cyan} transparent ${BRAND.cyan} ${BRAND.cyan}` }} />Exporting...</> : <><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>Export PDF</>}</button><button onClick={exportToEmail} className="px-5 py-2.5 rounded-xl text-base font-medium flex items-center gap-2" style={btnSecondary}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>Email Report</button><Logo size="small" /></div></div><div className="p-10 mb-10" style={{ ...cardStyle, boxShadow: '0 0 60px rgba(0,229,229,0.15)' }}><div className="flex flex-col md:flex-row md:items-center md:justify-between gap-8"><div><div className="flex items-center gap-3 mb-4"><AlphaBadge /><span className="text-base font-medium" style={{ color: BRAND.gray }}>{assessmentType === 'individual' ? 'Individual AI Literacy' : 'Organizational AI Readiness'}</span></div><h1 className="text-4xl font-bold mb-2" style={{ color: BRAND.white }}>{assessmentType === 'individual' ? userInfo.assessorName : userInfo.organizationName}</h1><p className="text-lg" style={{ color: BRAND.gray }}>{userInfo.role} {userInfo.industry && `· ${userInfo.industry}`}</p></div><div className="text-center md:text-right"><div className="text-7xl font-bold" style={{ color: results.maturityLevel.color }}>{results.percentageScore}%</div><div className="text-lg" style={{ color: BRAND.gray }}>Overall Score</div></div></div><div className="mt-8 p-5 rounded-xl" style={{ backgroundColor: results.maturityLevel.color + '15', border: `2px solid ${results.maturityLevel.color}` }}><div className="flex items-center justify-between"><div className="flex items-center gap-3"><div className="w-5 h-5 rounded" style={{ backgroundColor: results.maturityLevel.color }} /><span className="text-2xl font-bold" style={{ color: BRAND.white }}>{results.maturityLevel.level}</span></div><span className="text-lg" style={{ color: results.maturityLevel.color }}>{results.maturityLevel.desc}</span></div></div></div><div className="p-8 mb-10" style={cardStyle}><h2 className="text-2xl font-bold mb-8" style={{ color: BRAND.white }}>Domain Scores</h2><div className="space-y-5">{Object.entries(results.domainScores).map(([domain, data]) => { const color = data.percentage >= 80 ? BRAND.cyan : data.percentage >= 60 ? BRAND.cyanDark : data.percentage >= 40 ? '#FB8C00' : '#E53935'; return (<div key={domain}><div className="flex items-center justify-between mb-2"><span className="text-lg font-medium" style={{ color: BRAND.white }}>{domain}</span><span className="text-xl font-bold" style={{ color }}>{data.percentage}%</span></div><div className="h-3 rounded-full overflow-hidden" style={{ backgroundColor: BRAND.grayDark }}><div className="h-full rounded-full" style={{ width: `${data.percentage}%`, backgroundColor: color }} /></div></div>); })}</div></div>{/* ⚡ ATLAS v3.0: About Section */}
+<div className="p-8 mb-8" style={{ 
+  ...cardStyle, 
+  background: `linear-gradient(135deg, ${BRAND.cyan}20, ${BRAND.black})`,
+  border: `3px solid ${BRAND.cyan}`
+}}>
+  <div style={{textAlign:'center',marginBottom:'20px'}}>
+    <h2 className="text-3xl font-bold" style={{ color: BRAND.cyan }}>
+      ⚡ ATLAS Platform
+    </h2>
+    <p className="text-sm" style={{color:BRAND.gray}}>AI Transformation & Leadership Acceleration System</p>
+  </div>
+  <p className="text-lg leading-relaxed" style={{ color: BRAND.white }}>
+    <strong style={{color:BRAND.cyan}}>ATLAS</strong> (AI Transformation & Leadership Acceleration System) is Dubai AI Campus's 
+    unified platform for enterprise AI transformation. Built on three progressive tiers—<strong style={{color:BRAND.cyan}}>MOBILIZE</strong>, 
+    <strong style={{color:BRAND.cyan}}>DEPLOY</strong>, and <strong style={{color:BRAND.cyan}}>SCALE</strong>—ATLAS delivers 
+    modular components designed to accelerate your organization's AI journey. Whether you need strategic clarity, 
+    production-ready systems, or enterprise-wide capability building, ATLAS provides the framework, expertise, 
+    and governance infrastructure to transform AI potential into measurable business value.
+  </p>
+</div>
+{/* ⚡ ATLAS v3.0: Recommendation */}
+{atlasRecommendation && (
+  <div className="p-8 mb-8" style={{...cardStyle,border:`3px solid ${BRAND.cyan}`}}>
+    <h2 className="text-3xl font-bold mb-6 text-center" style={{ color: BRAND.cyan }}>
+      🎯 Your Recommended Path
+    </h2>
+    <div className="text-center mb-6">
+      <div className="inline-block px-8 py-4 rounded-xl" style={{ 
+        background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`,
+        color: BRAND.black,
+        fontSize:'28px',
+        fontWeight:'bold'
+      }}>
+        ATLAS {atlasRecommendation.tier}
+      </div>
+      <div className="text-xl mt-3" style={{ color: BRAND.gray }}>
+        {atlasRecommendation.tierDescription}
+      </div>
+      <p className="text-lg mt-2" style={{ color: BRAND.white }}>
+        {atlasRecommendation.coreFocus}
+      </p>
+      <p className="text-base mt-2" style={{ color: BRAND.gray }}>
+        Duration: {atlasRecommendation.typicalDuration}
+      </p>
+    </div>
+    <h3 className="text-xl font-bold mb-4" style={{ color: BRAND.white }}>
+      📋 Recommended Modules
+    </h3>
+    <div className="space-y-3 mb-6">
+      {atlasRecommendation.modules.map((mod, idx) => (
+        <div key={idx} className="p-4 rounded-lg" style={{ 
+          backgroundColor: BRAND.black,
+          border: `2px solid ${BRAND.cyan}40`
+        }}>
+          <div className="flex items-start gap-3">
+            <div style={{ 
+              width:'35px',
+              height:'35px',
+              borderRadius:'50%',
+              backgroundColor:BRAND.cyan,
+              color:BRAND.black,
+              display:'flex',
+              alignItems:'center',
+              justifyContent:'center',
+              fontWeight:'bold',
+              fontSize:'18px'
+            }}>
+              {idx + 1}
+            </div>
+            <div style={{flex:1}}>
+              <div className="font-bold text-lg" style={{ color: BRAND.white }}>
+                {mod.name}
+              </div>
+              <p style={{ color: BRAND.gray }}>
+                {mod.rationale}
+              </p>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div className="text-center p-6 rounded-xl" style={{ 
+      background: `linear-gradient(135deg, ${BRAND.cyan}15, ${BRAND.black})`,
+      border: `2px solid ${BRAND.cyan}`
+    }}>
+      <p className="text-lg mb-4 font-medium" style={{ color: BRAND.white }}>
+        {atlasRecommendation.nextStep}
+      </p>
+      <button 
+        onClick={() => window.open('https://dubai-ai-campus.ae/contact', '_blank')}
+        className="px-10 py-4 rounded-xl text-lg font-bold"
+        style={{
+          background: `linear-gradient(135deg, ${BRAND.cyan}, ${BRAND.cyanDark})`,
+          color: BRAND.black,
+          boxShadow: `0 6px 20px rgba(0, 229, 229, 0.4)`,
+          cursor: 'pointer',
+          fontSize:'18px'
+        }}
+      >
+        📞 Schedule Consultation →
+      </button>
+    </div>
+  </div>
+)}
+{isAnalyzing ? (<div className="p-16 text-center" style={cardStyle}><div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6" style={{ backgroundColor: BRAND.cyan + '20' }}><div className="w-10 h-10 rounded-full border-4 border-t-transparent animate-spin" style={{ borderColor: `${BRAND.cyan} transparent ${BRAND.cyan} ${BRAND.cyan}` }} /></div><h3 className="text-2xl font-bold mb-3" style={{ color: BRAND.white }}>Generating Personalized Insights</h3><p className="text-lg" style={{ color: BRAND.gray }}>Analyzing your results based on your role and industry...</p></div>) : aiAnalysis && (<><div className="p-8 mb-10" style={{ backgroundColor: 'rgba(0,229,229,0.08)', border: '1px solid rgba(0,229,229,0.3)', borderRadius: '16px' }}><h2 className="text-2xl font-bold mb-4" style={{ color: BRAND.white }}>Executive Summary</h2><p className="text-xl leading-relaxed" style={{ color: BRAND.grayLight }}>{aiAnalysis.executiveSummary}</p>{aiAnalysis.roleAlignment && <p className="text-lg mt-4" style={{ color: BRAND.cyan }}>{aiAnalysis.roleAlignment}</p>}{aiAnalysis.industryContext && <p className="text-lg mt-4 italic" style={{ color: BRAND.gray }}>{aiAnalysis.industryContext}</p>}</div><div className="grid md:grid-cols-2 gap-8 mb-10"><div className="p-8" style={{ backgroundColor: 'rgba(0,229,229,0.08)', border: '1px solid rgba(0,229,229,0.3)', borderRadius: '16px' }}><h3 className="text-xl font-bold mb-6" style={{ color: BRAND.cyan }}>Key Strengths</h3><div className="space-y-4">{(aiAnalysis.keyStrengths || []).map((s, i) => (<div key={i} className="pl-4" style={{ borderLeft: `3px solid ${BRAND.cyan}` }}><div className="text-lg font-semibold" style={{ color: BRAND.white }}>{s.area}</div><div className="text-base mt-1" style={{ color: BRAND.gray }}>{s.insight}</div></div>))}</div></div><div className="p-8" style={{ backgroundColor: 'rgba(251,140,0,0.08)', border: '1px solid rgba(251,140,0,0.3)', borderRadius: '16px' }}><h3 className="text-xl font-bold mb-6" style={{ color: '#FB8C00' }}>{assessmentType === 'individual' ? 'Development Areas' : 'Critical Gaps'}</h3><div className="space-y-4">{(aiAnalysis.developmentAreas || aiAnalysis.criticalGaps || []).map((g, i) => (<div key={i} className="pl-4" style={{ borderLeft: '3px solid #FB8C00' }}><div className="flex items-center gap-2"><span className="text-lg font-semibold" style={{ color: BRAND.white }}>{g.area}</span><span className="text-xs px-2 py-0.5 rounded-full font-medium" style={{ backgroundColor: g.priority === 'HIGH' ? '#E53935' : g.priority === 'MEDIUM' ? '#FB8C00' : BRAND.cyanDark, color: BRAND.white }}>{g.priority}</span></div><div className="text-base mt-1" style={{ color: BRAND.gray }}>{g.insight}</div></div>))}</div></div></div><div className="p-8 mb-10" style={cardStyle}><h2 className="text-2xl font-bold mb-8" style={{ color: BRAND.white }}>{assessmentType === 'individual' ? 'Skills to Develop' : 'Capabilities to Build'}</h2><div className="grid md:grid-cols-2 gap-4">{(aiAnalysis.skillsToDevelope || aiAnalysis.capabilitiesToBuild || []).map((s, i) => (<div key={i} className="p-5 rounded-xl" style={{ backgroundColor: BRAND.deepNavy, borderLeft: `3px solid ${BRAND.cyan}` }}><div className="text-lg font-semibold mb-2" style={{ color: BRAND.cyan }}>{s.skill || s.capability}</div><div className="text-base mb-3" style={{ color: BRAND.gray }}>{s.description}</div><span className="text-sm px-3 py-1 rounded-full" style={{ backgroundColor: BRAND.cyan + '20', color: BRAND.cyan }}>{s.trainingType || s.trainingFocus}</span></div>))}</div></div><div className="p-8" style={{ background: `linear-gradient(135deg, rgba(0,229,229,0.1) 0%, ${BRAND.navy} 100%)`, border: '1px solid rgba(0,229,229,0.3)', borderRadius: '16px' }}><h2 className="text-2xl font-bold mb-6" style={{ color: BRAND.white }}>Recommended Next Steps</h2><div className="space-y-4">{(aiAnalysis.recommendedNextSteps || aiAnalysis.investmentPriorities || []).map((step, i) => (<div key={i} className="flex items-start gap-4"><div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 text-lg font-bold" style={{ backgroundColor: BRAND.cyan, color: BRAND.black }}>{i + 1}</div><div className="text-lg pt-2" style={{ color: BRAND.grayLight }}>{typeof step === 'string' ? step : step.recommendation}{step.timeframe && <span className="ml-2 text-sm" style={{ color: BRAND.cyan }}>({step.timeframe})</span>}</div></div>))}</div>{aiAnalysis.careerTip && <div className="mt-8 p-4 rounded-xl" style={{ backgroundColor: BRAND.cyan + '10' }}><span className="text-base" style={{ color: BRAND.cyan }}>💡 {aiAnalysis.careerTip}</span></div>}</div></>)}<div className="text-center mt-16 text-base" style={{ color: BRAND.gray }}>ARQ™ Alpha Assessment · DUBAI AI CAMPUS · DIFC Innovation Hub</div></div></div>
   );
 
   return null;
